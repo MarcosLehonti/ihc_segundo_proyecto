@@ -11,7 +11,7 @@
 
 ## Integrantes y Modalidades
 
-- **Integrante(s):** Guzman Montalvan Marcos
+- **Integrante(s):** Guzman Montalvan Marcos Lehonti
 - **Modalidad P1:** Con IA
 - **Modalidad P2:** Sin IA
 
