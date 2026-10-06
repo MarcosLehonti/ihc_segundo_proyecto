@@ -124,13 +124,14 @@ function Pagos() {
                         Estado: {gasto.estado}
                     </p>
 
-                    {gasto.estado === 'pendiente' && (
-
-                        <button onClick={() => handlePagarGasto(gasto.id)}>
-                            Pagar gasto
-                        </button>
-
-                    )}
+                    <button
+                        onClick={() => handlePagarGasto(gasto.id)}
+                        disabled={gasto.estado.toLowerCase().trim() === 'gastado'}
+                    >
+                        {gasto.estado.toLowerCase().trim() === 'gastado'
+                            ? 'Gasto pagado'
+                            : 'Pagar gasto'}
+                    </button>
 
                     <hr />
 
