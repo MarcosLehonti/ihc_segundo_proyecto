@@ -98,5 +98,34 @@ async function editarGasto(req, res) {
 
 }
 
+async function pagarGasto(req, res) {
+    try {
+        const { id } = req.params;
 
-module.exports = { registrarGasto, obtenerGastos, eliminarGasto, editarGasto };
+        const gasto = await Gasto.findByPk(id);
+        if (!gasto) {
+            return res.status(404).json({
+                error: 'Gasto no encontrado'
+            })
+        }
+
+        gasto.estado = 'gastado';
+        await gasto.save();
+
+        return res.json({
+            message: 'Gasto pagado correctamente',
+            gasto
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            error: 'Error al marcar el gasto como pagado'
+        });
+
+    }
+
+}
+
+
+module.exports = { registrarGasto, obtenerGastos, eliminarGasto, editarGasto, pagarGasto };

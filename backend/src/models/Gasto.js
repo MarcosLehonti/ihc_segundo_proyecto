@@ -22,6 +22,11 @@ const Gasto = sequelize.define('Gasto', {
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false
+    },
+    estado: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "Pendiente"
     }
 });
 
