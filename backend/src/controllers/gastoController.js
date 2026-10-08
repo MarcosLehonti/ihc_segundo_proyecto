@@ -79,6 +79,13 @@ async function editarGasto(req, res) {
             });
         }
 
+        if (gasto.estado.toLowerCase().trim() === 'gastado') {
+
+            return res.status(400).json({
+                error: 'No se puede editar este gasto porque ya está pagado'
+            });
+        }
+
         gasto.monto = monto;
         gasto.motivo = motivo;
 
