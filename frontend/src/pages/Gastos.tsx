@@ -5,6 +5,7 @@ interface Gasto {
     monto: number;
     motivo: string;
     fecha: string;
+    estado: string;
 }
 
 function Gastos() {
@@ -233,7 +234,16 @@ function Gastos() {
                         Fecha: {new Date(gasto.fecha).toLocaleString()}
                     </p>
 
-                    <button onClick={() => handleEditarGasto(gasto)}>
+                    <button
+                        onClick={() => {
+                            if (gasto.estado.toLowerCase().trim() === 'gastado') {
+                                alert('No se puede editar este gasto porque ya está pagado.');
+                                return;
+                            }
+
+                            handleEditarGasto(gasto);
+                        }}
+                    >
                         Editar
                     </button>
 
