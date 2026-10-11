@@ -95,7 +95,16 @@ function Gastos() {
         }
     };
 
+
     const handleEliminarGasto = async (id: number) => {
+
+        const confirmar = window.confirm(
+            '¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.'
+        );
+
+        if (!confirmar) {
+            return;
+        }
 
         try {
 
@@ -113,20 +122,26 @@ function Gastos() {
 
             if (response.ok) {
 
-                console.log(data.message);
+                alert('Gasto eliminado correctamente.');
 
                 obtenerGastos();
 
             } else {
 
-                console.log(data.error);
+                alert(data.error);
 
             }
 
         } catch (error) {
+
             console.error('Error al eliminar el gasto:', error);
+
+            alert('Ocurrió un error al intentar eliminar el gasto.');
+
         }
+
     };
+
 
     const handleEditarGasto = (gasto: Gasto) => {
 
