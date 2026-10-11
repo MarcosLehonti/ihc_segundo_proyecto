@@ -13,6 +13,7 @@ describe('pagarGasto', () => {
             monto: 100,
             motivo: 'Comida',
             estado: 'pendiente',
+            userId: 1,
             save: jest.fn()
         };
 
@@ -20,6 +21,9 @@ describe('pagarGasto', () => {
 
         const req = {
             params: {
+                id: 1
+            },
+            user: {
                 id: 1
             }
         };
@@ -49,6 +53,9 @@ describe('pagarGasto', () => {
         const req = {
             params: {
                 id: 99
+            },
+            user: {
+                id: 1
             }
         };
 
@@ -74,6 +81,7 @@ describe('pagarGasto', () => {
             monto: 2000,
             motivo: 'Compra de materiales',
             estado: 'pendiente',
+            userId: 1,
             save: jest.fn().mockRejectedValue(new Error('Error de base de datos'))
         };
 
@@ -82,6 +90,9 @@ describe('pagarGasto', () => {
         const req = {
             params: {
                 id: 3
+            },
+            user: {
+                id: 1
             }
         };
 
@@ -100,7 +111,6 @@ describe('pagarGasto', () => {
 
     });
 
-
     test('debe buscar el gasto utilizando el ID recibido', async () => {
 
         const gasto = {
@@ -108,6 +118,7 @@ describe('pagarGasto', () => {
             monto: 2000,
             motivo: 'Compra de materiales',
             estado: 'pendiente',
+            userId: 1,
             save: jest.fn()
         };
 
@@ -116,6 +127,9 @@ describe('pagarGasto', () => {
         const req = {
             params: {
                 id: 3
+            },
+            user: {
+                id: 1
             }
         };
 
@@ -130,5 +144,45 @@ describe('pagarGasto', () => {
 
     });
 
+    test('debe rechazar el pago si el gasto pertenece a otro usuario', async () => {
+
+        const gasto = {
+            id: 3,
+            monto: 2000,
+            motivo: 'Compra de materiales',
+            estado: 'pendiente',
+            userId: 2,
+            save: jest.fn()
+        };
+
+        Gasto.findByPk.mockResolvedValue(gasto);
+
+        const req = {
+            params: {
+                id: 3
+            },
+            user: {
+                id: 1
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await pagarGasto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permiso para pagar este gasto'
+        });
+
+        expect(gasto.estado).toBe('pendiente');
+
+        expect(gasto.save).not.toHaveBeenCalled();
+
+    });
 
 });

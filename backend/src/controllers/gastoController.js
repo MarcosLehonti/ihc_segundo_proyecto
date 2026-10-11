@@ -50,6 +50,11 @@ async function eliminarGasto(req, res) {
                 error: 'Gasto no encontrado'
             });
         }
+        if (Number(gasto.userId) !== Number(req.user.id)) {
+            return res.status(403).json({
+                error: 'No tienes permiso para eliminar este gasto'
+            });
+        }
         await gasto.destroy();
         res.json({ message: 'Gasto eliminado correctamente' });
     } catch (error) {
@@ -76,6 +81,12 @@ async function editarGasto(req, res) {
         if (!gasto) {
             return res.status(404).json({
                 error: 'Gasto no encontrado'
+            });
+        }
+
+        if (Number(gasto.userId) !== Number(req.user.id)) {
+            return res.status(403).json({
+                error: 'No tienes permiso para editar este gasto'
             });
         }
 
@@ -114,6 +125,12 @@ async function pagarGasto(req, res) {
             return res.status(404).json({
                 error: 'Gasto no encontrado'
             })
+        }
+
+        if (Number(gasto.userId) !== Number(req.user.id)) {
+            return res.status(403).json({
+                error: 'No tienes permiso para pagar este gasto'
+            });
         }
 
         gasto.estado = 'gastado';

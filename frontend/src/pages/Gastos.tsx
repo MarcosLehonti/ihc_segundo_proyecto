@@ -99,7 +99,7 @@ function Gastos() {
     const handleEliminarGasto = async (id: number) => {
 
         const confirmar = window.confirm(
-            '¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.'
+            'Estas seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.'
         );
 
         if (!confirmar) {
