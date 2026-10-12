@@ -1,4 +1,4 @@
-const { pagarGasto } = require('../src/controllers/gastoController');
+const { pagarGasto, editarGasto } = require('../src/controllers/gastoController');
 
 const Gasto = require('../src/models/Gasto');
 
@@ -178,6 +178,55 @@ describe('pagarGasto', () => {
         expect(res.json).toHaveBeenCalledWith({
             error: 'No tienes permiso para pagar este gasto'
         });
+
+        expect(gasto.estado).toBe('pendiente');
+
+        expect(gasto.save).not.toHaveBeenCalled();
+
+    });
+
+    test('debe rechazar la edicion de un gasto que pertenece a otro usuario', async () => {
+
+        const gasto = {
+            id: 3,
+            monto: 2000,
+            motivo: 'Compra de materiales',
+            estado: 'pendiente',
+            userId: 2,
+            save: jest.fn()
+        };
+
+        Gasto.findByPk.mockResolvedValue(gasto);
+
+        const req = {
+            params: {
+                id: 3
+            },
+            user: {
+                id: 1
+            },
+            body: {
+                monto: 500,
+                motivo: 'Intento de modificación'
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await editarGasto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permiso para editar este gasto'
+        });
+
+        expect(gasto.monto).toBe(2000);
+
+        expect(gasto.motivo).toBe('Compra de materiales');
 
         expect(gasto.estado).toBe('pendiente');
 
