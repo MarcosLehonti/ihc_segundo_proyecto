@@ -1,22 +1,93 @@
 const Gasto = require('../models/Gasto');
+const Presupuesto = require('../models/Presupuesto');
+const { Op } = require('sequelize');
+
 async function registrarGasto(req, res) {
     try {
         const { monto, motivo } = req.body;
+        const userId = req.user.id;
+        const montoNumerico = Number(monto);
 
-        if (!monto || !motivo) {
+        // Validar los datos recibidos
+        if (
+            monto === undefined ||
+            monto === null ||
+            monto === '' ||
+            !Number.isFinite(montoNumerico) ||
+            montoNumerico <= 0 ||
+            !motivo ||
+            !String(motivo).trim()
+        ) {
             return res.status(400).json({
-                error: 'Todos los campos son obligatorios'
+                error: 'Debes ingresar un monto positivo y un motivo válido'
             });
         }
 
-        const gasto = await Gasto.create({
-            monto,
-            motivo,
-            fecha: new Date(),
-            userId: req.user.id
+        // Obtener el mes y año actuales
+        const ahora = new Date();
+        const mes = ahora.getMonth() + 1;
+        const anio = ahora.getFullYear();
+
+        // Buscar el presupuesto del usuario para el mes actual
+        const presupuesto = await Presupuesto.findOne({
+            where: {
+                userId,
+                mes,
+                anio
+            }
         });
 
-        res.status(201).json(gasto);
+        if (!presupuesto) {
+            return res.status(400).json({
+                error: 'No tienes un presupuesto establecido para el mes actual. Establece tu presupuesto antes de registrar gastos.'
+            });
+        }
+
+        // Definir el inicio y el final del mes
+        const inicioMes = new Date(anio, mes - 1, 1);
+        const inicioMesSiguiente = new Date(anio, mes, 1);
+
+        // Obtener los gastos registrados durante el mes actual
+        const gastos = await Gasto.findAll({
+            where: {
+                userId,
+                fecha: {
+                    [Op.gte]: inicioMes,
+                    [Op.lt]: inicioMesSiguiente
+                }
+            },
+            attributes: ['monto']
+        });
+
+        // Calcular el total gastado
+        const gastado = gastos.reduce(
+            (total, gasto) => total + Number(gasto.monto),
+            0
+        );
+
+        const limite = Number(presupuesto.limite);
+        const disponible = Number((limite - gastado).toFixed(2));
+
+        // Validar que el nuevo gasto no supere el saldo disponible
+        if (montoNumerico > disponible) {
+            return res.status(400).json({
+                error: 'El gasto supera el presupuesto mensual disponible',
+                limite: Number(limite.toFixed(2)),
+                gastado: Number(gastado.toFixed(2)),
+                disponible,
+                montoSolicitado: Number(montoNumerico.toFixed(2))
+            });
+        }
+
+        // Registrar el gasto si está dentro del presupuesto
+        const gasto = await Gasto.create({
+            monto: montoNumerico,
+            motivo: String(motivo).trim(),
+            fecha: ahora,
+            userId
+        });
+
+        return res.status(201).json(gasto);
 
     } catch (error) {
         console.log(error);

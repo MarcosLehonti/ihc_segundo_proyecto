@@ -2,6 +2,7 @@ const app = require('./src/app');
 const sequelize = require('./src/config/database');
 const User = require('./src/models/User');
 const Gasto = require('./src/models/Gasto');
+const Presupuesto = require('./src/models/Presupuesto');
 
 const PORT = 4000;
 
