@@ -141,37 +141,101 @@ async function editarGasto(req, res) {
     try {
         const { id } = req.params;
         const { monto, motivo } = req.body;
+        const userId = req.user.id;
+        const montoNumerico = Number(monto);
 
-        if (!monto || !motivo) {
+        if (
+            monto === undefined ||
+            monto === null ||
+            monto === '' ||
+            !Number.isFinite(montoNumerico) ||
+            montoNumerico <= 0 ||
+            !motivo ||
+            !String(motivo).trim()
+        ) {
             return res.status(400).json({
-                error: 'Todos los campos son obligatorios'
+                error: 'Debes ingresar un monto positivo y un motivo válido'
             });
         }
 
         const gasto = await Gasto.findByPk(id);
+
         if (!gasto) {
             return res.status(404).json({
                 error: 'Gasto no encontrado'
             });
         }
 
-        if (Number(gasto.userId) !== Number(req.user.id)) {
+        if (Number(gasto.userId) !== Number(userId)) {
             return res.status(403).json({
                 error: 'No tienes permiso para editar este gasto'
             });
         }
 
         if (gasto.estado.toLowerCase().trim() === 'gastado') {
-
             return res.status(400).json({
                 error: 'No se puede editar este gasto porque ya está pagado'
             });
         }
 
-        gasto.monto = monto;
-        gasto.motivo = motivo;
+        // Obtener el mes y año del gasto original
+        const fechaGasto = new Date(gasto.fecha);
+        const mes = fechaGasto.getMonth() + 1;
+        const anio = fechaGasto.getFullYear();
+
+        // Buscar el presupuesto correspondiente al gasto
+        const presupuesto = await Presupuesto.findOne({
+            where: { userId, mes, anio }
+        });
+
+        if (!presupuesto) {
+            return res.status(400).json({
+                error: 'No existe un presupuesto para el mes del gasto'
+            });
+        }
+
+        // Definir el período mensual
+        const inicioMes = new Date(anio, mes - 1, 1);
+        const inicioMesSiguiente = new Date(anio, mes, 1);
+
+        // Consultar los demás gastos del mes, excluyendo el que se edita
+        const gastos = await Gasto.findAll({
+            where: {
+                userId,
+                id: { [Op.ne]: gasto.id },
+                fecha: {
+                    [Op.gte]: inicioMes,
+                    [Op.lt]: inicioMesSiguiente
+                }
+            },
+            attributes: ['monto']
+        });
+
+        const gastadoOtros = gastos.reduce(
+            (total, item) => total + Number(item.monto),
+            0
+        );
+
+        const limite = Number(presupuesto.limite);
+        const disponible = Number((limite - gastadoOtros).toFixed(2));
+
+        // Validar el nuevo monto sin contar dos veces el gasto original
+        if (montoNumerico > disponible) {
+            return res.status(400).json({
+                error: 'La modificación supera el presupuesto mensual disponible',
+                limite: Number(limite.toFixed(2)),
+                gastadoOtros: Number(gastadoOtros.toFixed(2)),
+                disponible,
+                montoSolicitado: Number(montoNumerico.toFixed(2))
+            });
+        }
+
+        // Actualizar el gasto
+        gasto.monto = montoNumerico;
+        gasto.motivo = String(motivo).trim();
 
         await gasto.save();
+
         return res.json({
             message: 'Gasto editado correctamente',
             gasto
@@ -182,9 +246,7 @@ async function editarGasto(req, res) {
         return res.status(500).json({
             error: 'Error al editar el gasto'
         });
-
     }
-
 }
 
 async function pagarGasto(req, res) {
