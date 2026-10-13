@@ -27,6 +27,16 @@ const Gasto = sequelize.define('Gasto', {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: "Pendiente"
+    },
+    tipo: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "gasto"
+    },
+    categoria: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "otros"
     }
 });
 
