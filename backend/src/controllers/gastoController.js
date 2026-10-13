@@ -142,7 +142,7 @@ async function eliminarGasto(req, res) {
 async function editarGasto(req, res) {
     try {
         const { id } = req.params;
-        const { monto, motivo } = req.body;
+        const { monto, motivo, tipo, categoria } = req.body;
         const userId = req.user.id;
         const montoNumerico = Number(monto);
 
@@ -235,6 +235,8 @@ async function editarGasto(req, res) {
         // Actualizar el gasto
         gasto.monto = montoNumerico;
         gasto.motivo = String(motivo).trim();
+        if (tipo) gasto.tipo = String(tipo).toLowerCase().trim();
+        if (categoria) gasto.categoria = String(categoria).toLowerCase().trim();
 
         await gasto.save();
 

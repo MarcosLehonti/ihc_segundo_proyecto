@@ -206,7 +206,9 @@ function Gastos() {
                     },
                     body: JSON.stringify({
                         monto,
-                        motivo
+                        motivo,
+                        tipo,
+                        categoria
                     })
                 }
             );
@@ -219,6 +221,8 @@ function Gastos() {
 
                 setMonto('');
                 setMotivo('');
+                setTipo('gasto');
+                setCategoria('otros');
                 setGastoEditando(null);
 
                 obtenerGastos();
