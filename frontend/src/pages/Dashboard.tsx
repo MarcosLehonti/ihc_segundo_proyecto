@@ -127,6 +127,11 @@ function Dashboard() {
             return;
         }
 
+        if (resumen && limiteNumerico < resumen.gastado) {
+            setError('El límite no puede ser menor que lo que ya has gastado en el mes');
+            return;
+        }
+
         const token = localStorage.getItem('token');
 
         if (!token) {
