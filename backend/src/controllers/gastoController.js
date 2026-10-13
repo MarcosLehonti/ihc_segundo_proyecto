@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 
 async function registrarGasto(req, res) {
     try {
-        const { monto, motivo } = req.body;
+        const { monto, motivo, tipo, categoria } = req.body;
         const userId = req.user.id;
         const montoNumerico = Number(monto);
 
@@ -84,7 +84,9 @@ async function registrarGasto(req, res) {
             monto: montoNumerico,
             motivo: String(motivo).trim(),
             fecha: ahora,
-            userId
+            userId,
+            tipo: tipo ? String(tipo).toLowerCase().trim() : 'gasto',
+            categoria: categoria ? String(categoria).toLowerCase().trim() : 'otros'
         });
 
         return res.status(201).json(gasto);
@@ -284,5 +286,106 @@ async function pagarGasto(req, res) {
 
 }
 
+async function filtrarGastos(req, res) {
+    try {
+        const userId = req.user.id;
+        const {
+            buscar,
+            tipo,
+            categoria,
+            estado,
+            periodo,
+            desde,
+            hasta
+        } = req.query;
 
-module.exports = { registrarGasto, obtenerGastos, eliminarGasto, editarGasto, pagarGasto };
+        const where = {
+            userId
+        };
+
+        if (buscar && String(buscar).trim()) {
+            where.motivo = {
+                [Op.iLike]: `%${String(buscar).trim()}%`
+            };
+        }
+
+        if (tipo && String(tipo).trim() && String(tipo).toLowerCase() !== 'todos') {
+            where.tipo = String(tipo).toLowerCase().trim();
+        }
+
+        if (categoria && String(categoria).trim() && String(categoria).toLowerCase() !== 'todas' && String(categoria).toLowerCase() !== 'todos') {
+            where.categoria = String(categoria).toLowerCase().trim();
+        }
+
+        if (estado && String(estado).trim() && String(estado).toLowerCase() !== 'todos') {
+            const estadoNormalizado = String(estado).toLowerCase().trim();
+            if (estadoNormalizado === 'pagado' || estadoNormalizado === 'gastado') {
+                where.estado = {
+                    [Op.in]: ['pagado', 'gastado', 'Pagado', 'Gastado']
+                };
+            } else if (estadoNormalizado === 'pendiente') {
+                where.estado = {
+                    [Op.in]: ['pendiente', 'Pendiente']
+                };
+            } else {
+                where.estado = estadoNormalizado;
+            }
+        }
+
+        const ahora = new Date();
+        const anioActual = ahora.getFullYear();
+        const mesActual = ahora.getMonth();
+
+        if (periodo === 'este_mes') {
+            const inicioMes = new Date(anioActual, mesActual, 1);
+            const inicioMesSiguiente = new Date(anioActual, mesActual + 1, 1);
+            where.fecha = {
+                [Op.gte]: inicioMes,
+                [Op.lt]: inicioMesSiguiente
+            };
+        } else if (periodo === 'mes_anterior') {
+            const inicioMesAnterior = new Date(anioActual, mesActual - 1, 1);
+            const finMesAnterior = new Date(anioActual, mesActual, 1);
+            where.fecha = {
+                [Op.gte]: inicioMesAnterior,
+                [Op.lt]: finMesAnterior
+            };
+        } else if (desde || hasta) {
+            where.fecha = {};
+            if (desde) {
+                const fechaDesde = new Date(desde);
+                fechaDesde.setHours(0, 0, 0, 0);
+                where.fecha[Op.gte] = fechaDesde;
+            }
+            if (hasta) {
+                const fechaHasta = new Date(hasta);
+                fechaHasta.setHours(23, 59, 59, 999);
+                where.fecha[Op.lte] = fechaHasta;
+            }
+        }
+
+        const movimientos = await Gasto.findAll({
+            where,
+            order: [['fecha', 'DESC']]
+        });
+
+        const total = movimientos.reduce(
+            (totalAcumulado, item) => totalAcumulado + Number(item.monto),
+            0
+        );
+
+        return res.json({
+            movimientos,
+            total: Number(total.toFixed(2)),
+            cantidad: movimientos.length
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            error: 'Error al filtrar los movimientos'
+        });
+    }
+}
+
+module.exports = { registrarGasto, obtenerGastos, eliminarGasto, editarGasto, pagarGasto, filtrarGastos };
