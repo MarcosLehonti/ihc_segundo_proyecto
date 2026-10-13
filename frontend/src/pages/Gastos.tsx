@@ -6,13 +6,25 @@ interface Gasto {
     motivo: string;
     fecha: string;
     estado: string;
+    tipo?: string;
+    categoria?: string;
 }
 
 function Gastos() {
 
     const [monto, setMonto] = useState('');
     const [motivo, setMotivo] = useState('');
+    const [tipo, setTipo] = useState('gasto');
+    const [categoria, setCategoria] = useState('otros');
     const [gastos, setGastos] = useState<Gasto[]>([]);
+
+    const [buscar, setBuscar] = useState('');
+    const [filtroTipo, setFiltroTipo] = useState('');
+    const [filtroCategoria, setFiltroCategoria] = useState('');
+    const [filtroEstado, setFiltroEstado] = useState('');
+    const [filtroPeriodo, setFiltroPeriodo] = useState('');
+    const [fechaDesde, setFechaDesde] = useState('');
+    const [fechaHasta, setFechaHasta] = useState('');
 
     const [gastoEditando, setGastoEditando] = useState<number | null>(null);
 
@@ -22,8 +34,23 @@ function Gastos() {
 
         try {
 
+            const params = new URLSearchParams();
+
+            if (buscar.trim()) params.append('buscar', buscar.trim());
+            if (filtroTipo) params.append('tipo', filtroTipo);
+            if (filtroCategoria) params.append('categoria', filtroCategoria);
+            if (filtroEstado) params.append('estado', filtroEstado);
+            if (filtroPeriodo) params.append('periodo', filtroPeriodo);
+            if (filtroPeriodo === 'rango' && fechaDesde) params.append('desde', fechaDesde);
+            if (filtroPeriodo === 'rango' && fechaHasta) params.append('hasta', fechaHasta);
+
+            const queryString = params.toString();
+            const url = queryString
+                ? `http://localhost:4000/api/gastos/filtrar?${queryString}`
+                : 'http://localhost:4000/api/gastos/filtrar';
+
             const response = await fetch(
-                'http://localhost:4000/api/gastos/obtener',
+                url,
                 {
                     method: 'GET',
                     headers: {
@@ -35,7 +62,7 @@ function Gastos() {
             const data = await response.json();
 
             if (response.ok) {
-                setGastos(data);
+                setGastos(data.movimientos || []);
             } else {
                 console.log(data.error);
             }
@@ -47,7 +74,7 @@ function Gastos() {
 
     useEffect(() => {
         obtenerGastos();
-    }, []);
+    }, [buscar, filtroTipo, filtroCategoria, filtroEstado, filtroPeriodo, fechaDesde, fechaHasta]);
 
     const handleRegitrarGasto = async () => {
 
@@ -68,7 +95,9 @@ function Gastos() {
                     },
                     body: JSON.stringify({
                         monto,
-                        motivo
+                        motivo,
+                        tipo,
+                        categoria
                     })
                 }
             );
@@ -81,6 +110,8 @@ function Gastos() {
 
                 setMonto('');
                 setMotivo('');
+                setTipo('gasto');
+                setCategoria('otros');
 
                 obtenerGastos();
 
@@ -148,6 +179,8 @@ function Gastos() {
         setGastoEditando(gasto.id);
         setMonto(String(gasto.monto));
         setMotivo(gasto.motivo);
+        if (gasto.tipo) setTipo(gasto.tipo);
+        if (gasto.categoria) setCategoria(gasto.categoria);
 
     };
 
@@ -217,6 +250,18 @@ function Gastos() {
                 onChange={(e) => setMotivo(e.target.value)}
             />
 
+            <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                <option value="gasto">Gasto</option>
+                <option value="ingreso">Ingreso</option>
+            </select>
+
+            <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                <option value="otros">Otros</option>
+                <option value="comida">Comida</option>
+                <option value="transporte">Transporte</option>
+                <option value="estudio">Estudio</option>
+            </select>
+
             {gastoEditando === null ? (
 
                 <button onClick={handleRegitrarGasto}>
@@ -231,6 +276,67 @@ function Gastos() {
 
             )}
 
+            <hr />
+
+            <section>
+                <h2>Buscar y Filtrar Movimientos</h2>
+
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Buscar por concepto o descripción..."
+                        value={buscar}
+                        onChange={(e) => setBuscar(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+                        <option value="">Todos los tipos</option>
+                        <option value="gasto">Solo gastos</option>
+                        <option value="ingreso">Solo ingresos</option>
+                    </select>
+
+                    <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+                        <option value="">Todas las categorías</option>
+                        <option value="comida">Comida</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="estudio">Estudio</option>
+                        <option value="otros">Otros</option>
+                    </select>
+
+                    <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                    </select>
+
+                    <select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value)}>
+                        <option value="">Todos los períodos</option>
+                        <option value="este_mes">Este mes</option>
+                        <option value="mes_anterior">Mes anterior</option>
+                        <option value="rango">Rango de fechas</option>
+                    </select>
+
+                    {filtroPeriodo === 'rango' && (
+                        <div>
+                            <label>Desde: </label>
+                            <input
+                                type="date"
+                                value={fechaDesde}
+                                onChange={(e) => setFechaDesde(e.target.value)}
+                            />
+                            <label>Hasta: </label>
+                            <input
+                                type="date"
+                                value={fechaHasta}
+                                onChange={(e) => setFechaHasta(e.target.value)}
+                            />
+                        </div>
+                    )}
+                </div>
+            </section>
+
             <h2>Lista de gastos</h2>
 
             {gastos.map((gasto) => (
@@ -243,6 +349,14 @@ function Gastos() {
 
                     <p>
                         Motivo: {gasto.motivo}
+                    </p>
+
+                    <p>
+                        Tipo: {gasto.tipo || 'gasto'}
+                    </p>
+
+                    <p>
+                        Categoría: {gasto.categoria || 'otros'}
                     </p>
 
                     <p>
