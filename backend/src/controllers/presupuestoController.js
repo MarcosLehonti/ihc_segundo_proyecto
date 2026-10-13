@@ -22,6 +22,31 @@ async function establecerPresupuesto(req, res) {
             });
         }
 
+        const inicioMes = new Date(Number(anio), Number(mes) - 1, 1);
+        const inicioMesSiguiente = new Date(Number(anio), Number(mes), 1);
+
+        const gastos = await Gasto.findAll({
+            where: {
+                userId,
+                fecha: {
+                    [Op.gte]: inicioMes,
+                    [Op.lt]: inicioMesSiguiente
+                }
+            },
+            attributes: ['monto']
+        });
+
+        const gastado = gastos.reduce(
+            (total, gasto) => total + Number(gasto.monto),
+            0
+        );
+
+        if (Number(limite) < gastado) {
+            return res.status(400).json({
+                error: 'El límite no puede ser menor que lo que ya has gastado en el mes'
+            });
+        }
+
         const presupuesto = await Presupuesto.findOne({
             where: { userId, mes: Number(mes), anio: Number(anio) }
         });
