@@ -1,4 +1,4 @@
-const { pagarGasto, editarGasto } = require('../src/controllers/gastoController');
+const { pagarGasto, editarGasto, eliminarGasto } = require('../src/controllers/gastoController');
 
 const Gasto = require('../src/models/Gasto');
 
@@ -231,6 +231,45 @@ describe('pagarGasto', () => {
         expect(gasto.estado).toBe('pendiente');
 
         expect(gasto.save).not.toHaveBeenCalled();
+
+    });
+
+    test('debe rechazar la eliminacion de un gasto que pertenece a otro usuario', async () => {
+
+        const gasto = {
+            id: 3,
+            monto: 2000,
+            motivo: 'Compra de materiales',
+            estado: 'pendiente',
+            userId: 2,
+            destroy: jest.fn()
+        };
+
+        Gasto.findByPk.mockResolvedValue(gasto);
+
+        const req = {
+            params: {
+                id: 3
+            },
+            user: {
+                id: 1
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await eliminarGasto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'No tienes permiso para eliminar este gasto'
+        });
+
+        expect(gasto.destroy).not.toHaveBeenCalled();
 
     });
 
