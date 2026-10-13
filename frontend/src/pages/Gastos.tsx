@@ -25,6 +25,7 @@ function Gastos() {
     const [filtroPeriodo, setFiltroPeriodo] = useState('');
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
+    const [totalFiltrado, setTotalFiltrado] = useState(0);
 
     const [gastoEditando, setGastoEditando] = useState<number | null>(null);
 
@@ -63,6 +64,7 @@ function Gastos() {
 
             if (response.ok) {
                 setGastos(data.movimientos || []);
+                setTotalFiltrado(Number(data.total) || 0);
             } else {
                 console.log(data.error);
             }
@@ -118,6 +120,7 @@ function Gastos() {
             } else {
 
                 console.log(data.error);
+                alert(data.error);
 
             }
 
@@ -223,6 +226,7 @@ function Gastos() {
             } else {
 
                 console.log(data.error);
+                alert(data.error);
 
             }
 
@@ -335,56 +339,112 @@ function Gastos() {
                         </div>
                     )}
                 </div>
+
+                {(buscar || filtroTipo || filtroCategoria || filtroEstado || filtroPeriodo) && (
+                    <div style={{ marginTop: '10px' }}>
+                        <p><strong>Filtros activos:</strong></p>
+                        {buscar && (
+                            <span>
+                                Concepto: "{buscar}" <button onClick={() => setBuscar('')}>✕</button>{' '}
+                            </span>
+                        )}
+                        {filtroTipo && (
+                            <span>
+                                Tipo: {filtroTipo} <button onClick={() => setFiltroTipo('')}>✕</button>{' '}
+                            </span>
+                        )}
+                        {filtroCategoria && (
+                            <span>
+                                Categoría: {filtroCategoria} <button onClick={() => setFiltroCategoria('')}>✕</button>{' '}
+                            </span>
+                        )}
+                        {filtroEstado && (
+                            <span>
+                                Estado: {filtroEstado} <button onClick={() => setFiltroEstado('')}>✕</button>{' '}
+                            </span>
+                        )}
+                        {filtroPeriodo && (
+                            <span>
+                                Período: {filtroPeriodo === 'rango' ? `${fechaDesde || 'inicio'} a ${fechaHasta || 'hoy'}` : filtroPeriodo.replace('_', ' ')}{' '}
+                                <button onClick={() => { setFiltroPeriodo(''); setFechaDesde(''); setFechaHasta(''); }}>✕</button>{' '}
+                            </span>
+                        )}
+                        <div>
+                            <button
+                                onClick={() => {
+                                    setBuscar('');
+                                    setFiltroTipo('');
+                                    setFiltroCategoria('');
+                                    setFiltroEstado('');
+                                    setFiltroPeriodo('');
+                                    setFechaDesde('');
+                                    setFechaHasta('');
+                                }}
+                            >
+                                Limpiar todos los filtros
+                            </button>
+                        </div>
+                    </div>
+                )}
             </section>
 
-            <h2>Lista de gastos</h2>
+            <h2>Lista de movimientos</h2>
+            <p><strong>Total filtrado: Bs {totalFiltrado.toFixed(2)}</strong></p>
 
-            {gastos.map((gasto) => (
+            {gastos.length === 0 ? (
+                <p>No se encontraron movimientos con los filtros seleccionados.</p>
+            ) : (
+                gastos.map((gasto) => (
 
-                <div key={gasto.id}>
+                    <div key={gasto.id}>
 
-                    <p>
-                        Monto: {gasto.monto}
-                    </p>
+                        <p>
+                            Monto: {gasto.monto}
+                        </p>
 
-                    <p>
-                        Motivo: {gasto.motivo}
-                    </p>
+                        <p>
+                            Motivo: {gasto.motivo}
+                        </p>
 
-                    <p>
-                        Tipo: {gasto.tipo || 'gasto'}
-                    </p>
+                        <p>
+                            Tipo: {gasto.tipo || 'gasto'}
+                        </p>
 
-                    <p>
-                        Categoría: {gasto.categoria || 'otros'}
-                    </p>
+                        <p>
+                            Categoría: {gasto.categoria || 'otros'}
+                        </p>
 
-                    <p>
-                        Fecha: {new Date(gasto.fecha).toLocaleString()}
-                    </p>
+                        <p>
+                            Fecha: {new Date(gasto.fecha).toLocaleString()}
+                        </p>
 
-                    <button
-                        onClick={() => {
-                            if (gasto.estado.toLowerCase().trim() === 'gastado') {
-                                alert('No se puede editar este gasto porque ya está pagado.');
-                                return;
-                            }
+                        <p>
+                            Estado: {gasto.estado}
+                        </p>
 
-                            handleEditarGasto(gasto);
-                        }}
-                    >
-                        Editar
-                    </button>
+                        <button
+                            onClick={() => {
+                                if (gasto.estado.toLowerCase().trim() === 'gastado') {
+                                    alert('No se puede editar este gasto porque ya está pagado.');
+                                    return;
+                                }
 
-                    <button onClick={() => handleEliminarGasto(gasto.id)}>
-                        Eliminar
-                    </button>
+                                handleEditarGasto(gasto);
+                            }}
+                        >
+                            Editar
+                        </button>
 
-                    <hr />
+                        <button onClick={() => handleEliminarGasto(gasto.id)}>
+                            Eliminar
+                        </button>
 
-                </div>
+                        <hr />
 
-            ))}
+                    </div>
+
+                ))
+            )}
 
         </div>
     );
