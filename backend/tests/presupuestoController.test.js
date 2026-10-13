@@ -58,6 +58,40 @@ describe('establecerPresupuesto', () => {
 
     });
 
+    test('debe rechazar el limite si es menor a lo que ya se gasto en el mes', async () => {
+
+        Gasto.findAll.mockResolvedValue([
+            { monto: 200 },
+            { monto: 150 }
+        ]);
+
+        const req = {
+            body: {
+                limite: 250,
+                mes: 3,
+                anio: 2026
+            },
+            user: {
+                id: 1
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await establecerPresupuesto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'El límite no puede ser menor que lo que ya has gastado en el mes'
+        });
+
+        expect(Presupuesto.create).not.toHaveBeenCalled();
+
+    });
 
 
 });
