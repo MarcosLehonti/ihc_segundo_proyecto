@@ -93,5 +93,125 @@ describe('establecerPresupuesto', () => {
 
     });
 
+    test('debe rechazar un limite vacio, en cero o negativo', async () => {
+
+        const req = {
+            body: {
+                limite: 0,
+                mes: 3,
+                anio: 2026
+            },
+            user: {
+                id: 1
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await establecerPresupuesto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Debes proporcionar un límite positivo, un mes válido y un año válido'
+        });
+
+    });
+
+});
+
+describe('regla de limite mensual al registrar gasto', () => {
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('debe permitir registrar un gasto si el total del mes no supera el limite', async () => {
+
+        Presupuesto.findOne.mockResolvedValue({
+            id: 1,
+            userId: 1,
+            limite: 1000
+        });
+
+        Gasto.findAll.mockResolvedValue([
+            { monto: 300 }
+        ]);
+
+        const nuevoGasto = {
+            id: 1,
+            monto: 200,
+            motivo: 'Material de estudio',
+            userId: 1
+        };
+
+        Gasto.create.mockResolvedValue(nuevoGasto);
+
+        const req = {
+            body: {
+                monto: 200,
+                motivo: 'Material de estudio'
+            },
+            user: {
+                id: 1
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await registrarGasto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+
+        expect(res.json).toHaveBeenCalledWith(nuevoGasto);
+
+    });
+
+    test('debe bloquear el gasto si hace que el total del mes supere el limite', async () => {
+
+        Presupuesto.findOne.mockResolvedValue({
+            id: 1,
+            userId: 1,
+            limite: 500
+        });
+
+        Gasto.findAll.mockResolvedValue([
+            { monto: 400 }
+        ]);
+
+        const req = {
+            body: {
+                monto: 150,
+                motivo: 'Salida de fin de semana'
+            },
+            user: {
+                id: 1
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await registrarGasto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                error: 'El gasto supera el presupuesto mensual disponible'
+            })
+        );
+
+        expect(Gasto.create).not.toHaveBeenCalled();
+
+    });
 
 });
