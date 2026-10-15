@@ -4,12 +4,18 @@ import { useNavigate } from 'react-router-dom';
 function Login() {
 
     const [email, setEmail] = useState('');
-
     const [password, setPassword] = useState('');
+    const [mensajeError, setMensajeError] = useState('');
 
     const navigate = useNavigate();
 
     const handleLogin = async () => {
+        setMensajeError('');
+
+        if (!email.trim() || !password) {
+            setMensajeError('Por favor ingresa tu correo y contraseña.');
+            return;
+        }
 
         try {
 
@@ -36,13 +42,14 @@ function Login() {
 
             } else {
 
-                console.log(data.error);
+                setMensajeError(data.error || 'Credenciales incorrectas. Verifica tus datos.');
 
             }
 
         } catch (error) {
 
             console.error('Error al conectar con el servidor:', error);
+            setMensajeError('No se pudo conectar con el servidor. Intenta nuevamente.');
 
         }
 
@@ -70,6 +77,12 @@ function Login() {
             <button onClick={handleLogin}>
                 Iniciar sesión
             </button>
+
+            {mensajeError && (
+                <p role="alert" style={{ color: 'crimson', fontWeight: 'bold', marginTop: '10px' }}>
+                    {mensajeError}
+                </p>
+            )}
 
         </div>
     );
