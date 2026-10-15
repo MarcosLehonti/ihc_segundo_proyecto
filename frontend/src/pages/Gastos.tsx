@@ -261,9 +261,10 @@ function Gastos() {
     };
 
     return (
-        <div>
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'left' }}>
 
-            <h1>{gastoEditando === null ? 'Ingresar Gastos' : `Editando Gasto #${gastoEditando}`}</h1>
+            <section style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+                <h1>{gastoEditando === null ? 'Ingresar Gastos' : `Editando Gasto #${gastoEditando}`}</h1>
 
             {gastoEditando !== null && (
                 <div style={{ backgroundColor: '#e7f3fe', borderLeft: '4px solid #2196F3', padding: '10px 14px', marginBottom: '14px', borderRadius: '4px' }}>
@@ -343,10 +344,9 @@ function Gastos() {
                     {mensajeError}
                 </p>
             )}
+            </section>
 
-            <hr />
-
-            <section>
+            <section style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
                 <h2>Buscar y Filtrar Movimientos</h2>
 
                 <div>
@@ -481,12 +481,12 @@ function Gastos() {
                             )}
 
                             <p>
-                                Monto: {gasto.monto}
+                                <strong>Monto:</strong> <span style={{ fontSize: '1.15em', fontWeight: 'bold', color: gasto.tipo === 'ingreso' ? 'green' : '#c62828' }}>Bs {gasto.monto}</span>
                             </p>
 
-                        <p>
-                            Motivo: {gasto.motivo}
-                        </p>
+                            <p>
+                                <strong>Motivo:</strong> {gasto.motivo}
+                            </p>
 
                         <p>
                             Tipo: {gasto.tipo || 'gasto'}
