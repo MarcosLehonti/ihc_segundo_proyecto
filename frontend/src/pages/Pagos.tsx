@@ -12,6 +12,10 @@ interface Gasto {
 
     estado: string;
 
+    tipo?: string;
+
+    categoria?: string;
+
 }
 
 function normalizarEstado(estado: string): string {
@@ -121,6 +125,14 @@ function Pagos() {
 
                     <p>
                         Motivo: {gasto.motivo}
+                    </p>
+
+                    <p>
+                        Tipo: {gasto.tipo || 'gasto'}
+                    </p>
+
+                    <p>
+                        Categoría: {gasto.categoria || 'otros'}
                     </p>
 
                     <p>
