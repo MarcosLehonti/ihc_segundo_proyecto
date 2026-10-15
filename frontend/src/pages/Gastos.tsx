@@ -263,7 +263,18 @@ function Gastos() {
     return (
         <div>
 
-            <h1>Ingresar Gastos</h1>
+            <h1>{gastoEditando === null ? 'Ingresar Gastos' : `Editando Gasto #${gastoEditando}`}</h1>
+
+            {gastoEditando !== null && (
+                <div style={{ backgroundColor: '#e7f3fe', borderLeft: '4px solid #2196F3', padding: '10px 14px', marginBottom: '14px', borderRadius: '4px' }}>
+                    <p style={{ margin: 0, fontWeight: 'bold', color: '#0d47a1' }}>
+                        Modo edición activo: Gasto #{gastoEditando} ({motivo || 'sin motivo'})
+                    </p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.9em', color: '#555' }}>
+                        Modifica los valores deseados o cancela para volver al registro nuevo.
+                    </p>
+                </div>
+            )}
 
             <input
                 type="number"
@@ -299,9 +310,25 @@ function Gastos() {
 
             ) : (
 
-                <button onClick={handleActualizarGasto}>
-                    Guardar cambios
-                </button>
+                <>
+                    <button onClick={handleActualizarGasto}>
+                        Guardar cambios
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setGastoEditando(null);
+                            setMonto('');
+                            setMotivo('');
+                            setTipo('gasto');
+                            setCategoria('otros');
+                            setMensajeError('');
+                        }}
+                        style={{ marginLeft: '8px' }}
+                    >
+                        Cancelar edición
+                    </button>
+                </>
 
             )}
 
@@ -431,13 +458,31 @@ function Gastos() {
             {gastos.length === 0 ? (
                 <p>No se encontraron movimientos con los filtros seleccionados.</p>
             ) : (
-                gastos.map((gasto) => (
+                gastos.map((gasto) => {
+                    const estaEditandoEste = gasto.id === gastoEditando;
 
-                    <div key={gasto.id}>
+                    return (
+                        <div
+                            key={gasto.id}
+                            style={{
+                                padding: '10px',
+                                margin: '10px 0',
+                                border: estaEditandoEste ? '2px solid #2196F3' : '1px solid #ddd',
+                                borderRadius: '6px',
+                                backgroundColor: estaEditandoEste ? '#f4f9ff' : 'transparent'
+                            }}
+                        >
+                            {estaEditandoEste && (
+                                <p style={{ margin: '0 0 8px 0' }}>
+                                    <span style={{ backgroundColor: '#2196F3', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold' }}>
+                                        EDITANDO ESTE REGISTRO
+                                    </span>
+                                </p>
+                            )}
 
-                        <p>
-                            Monto: {gasto.monto}
-                        </p>
+                            <p>
+                                Monto: {gasto.monto}
+                            </p>
 
                         <p>
                             Motivo: {gasto.motivo}
@@ -476,11 +521,11 @@ function Gastos() {
                             Eliminar
                         </button>
 
-                        <hr />
+                            <hr />
 
-                    </div>
-
-                ))
+                        </div>
+                    );
+                })
             )}
 
         </div>
