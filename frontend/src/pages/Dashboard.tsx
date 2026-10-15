@@ -132,6 +132,13 @@ function Dashboard() {
             return;
         }
 
+        if (resumen) {
+            const confirmar = window.confirm(
+                `¿Confirmas actualizar el límite mensual a Bs ${limiteNumerico.toFixed(2)}? Esta acción reemplazará el límite actual de Bs ${Number(resumen.presupuesto.limite).toFixed(2)}.`
+            );
+            if (!confirmar) return;
+        }
+
         const token = localStorage.getItem('token');
 
         if (!token) {
