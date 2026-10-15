@@ -14,6 +14,13 @@ interface Gasto {
 
 }
 
+function normalizarEstado(estado: string): string {
+    const e = estado.toLowerCase().trim();
+    if (e === 'gastado' || e === 'pagado') return 'Pagado';
+    if (e === 'pendiente') return 'Pendiente';
+    return estado;
+}
+
 function Pagos() {
 
     const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -121,7 +128,7 @@ function Pagos() {
                     </p>
 
                     <p>
-                        Estado: {gasto.estado}
+                        Estado: {normalizarEstado(gasto.estado)}
                     </p>
 
                     <button
@@ -129,8 +136,8 @@ function Pagos() {
                         disabled={gasto.estado.toLowerCase().trim() === 'gastado'}
                     >
                         {gasto.estado.toLowerCase().trim() === 'gastado'
-                            ? 'Gasto pagado'
-                            : 'Pagar gasto'}
+                            ? 'Pagado'
+                            : 'Marcar como pagado'}
                     </button>
 
                     <hr />
