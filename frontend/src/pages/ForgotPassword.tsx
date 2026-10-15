@@ -105,6 +105,10 @@ function ForgotPassword() {
 
                 <div>
 
+                    <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px' }}>
+                        Ingresa el correo electrónico registrado en tu cuenta para iniciar el proceso de recuperación.
+                    </p>
+
                     <input
 
                         type="email"
@@ -131,6 +135,16 @@ function ForgotPassword() {
 
                 <div>
 
+                    <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '6px' }}>
+                        Crea una nueva contraseña segura para tu cuenta.
+                    </p>
+
+                    <p style={{ fontSize: '0.8em', color: '#444', backgroundColor: '#f0f4f8', padding: '6px 10px', borderRadius: '4px', marginBottom: '12px', display: 'inline-block' }}>
+                        ℹ <strong>Requisito:</strong> Mínimo 6 caracteres alfanuméricos.
+                    </p>
+
+                    <br />
+
                     <input
 
                         type="password"
@@ -152,6 +166,10 @@ function ForgotPassword() {
                 </div>
 
             )}
+
+            <p style={{ fontSize: '0.8em', color: '#888', marginTop: '20px' }}>
+                ¿Tienes problemas para acceder? Contacta a soporte@finanzapp.com
+            </p>
 
         </div>
 
