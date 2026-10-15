@@ -18,7 +18,7 @@ function Gastos() {
     const [categoria, setCategoria] = useState('otros');
     const [gastos, setGastos] = useState<Gasto[]>([]);
     const [mensajeExito, setMensajeExito] = useState('');
-
+    const [mensajeError, setMensajeError] = useState('');
     const [buscar, setBuscar] = useState('');
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroCategoria, setFiltroCategoria] = useState('');
@@ -81,10 +81,19 @@ function Gastos() {
 
     const handleRegitrarGasto = async () => {
 
-        if (!monto || !motivo) {
-            console.log('Todos los campos son obligatorios');
+        if (!monto || !motivo.trim()) {
+            setMensajeError('Todos los campos son obligatorios.');
+            setTimeout(() => setMensajeError(''), 3000);
             return;
         }
+
+        if (/^\d+$/.test(motivo.trim())) {
+            setMensajeError('El motivo debe contener una descripción válida en texto, no solo números.');
+            setTimeout(() => setMensajeError(''), 4000);
+            return;
+        }
+
+        setMensajeError('');
 
         try {
 
@@ -191,10 +200,19 @@ function Gastos() {
 
     const handleActualizarGasto = async () => {
 
-        if (!monto || !motivo || gastoEditando === null) {
-            console.log('Todos los campos son obligatorios');
+        if (!monto || !motivo.trim() || gastoEditando === null) {
+            setMensajeError('Todos los campos son obligatorios.');
+            setTimeout(() => setMensajeError(''), 3000);
             return;
         }
+
+        if (/^\d+$/.test(motivo.trim())) {
+            setMensajeError('El motivo debe contener una descripción válida en texto, no solo números.');
+            setTimeout(() => setMensajeError(''), 4000);
+            return;
+        }
+
+        setMensajeError('');
 
         try {
 
@@ -290,6 +308,12 @@ function Gastos() {
             {mensajeExito && (
                 <p role="status" style={{ color: 'green', fontWeight: 'bold', marginTop: '8px' }}>
                     {mensajeExito}
+                </p>
+            )}
+
+            {mensajeError && (
+                <p role="alert" style={{ color: 'crimson', fontWeight: 'bold', marginTop: '8px' }}>
+                    {mensajeError}
                 </p>
             )}
 
