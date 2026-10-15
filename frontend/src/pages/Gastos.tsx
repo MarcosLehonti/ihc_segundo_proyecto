@@ -17,6 +17,7 @@ function Gastos() {
     const [tipo, setTipo] = useState('gasto');
     const [categoria, setCategoria] = useState('otros');
     const [gastos, setGastos] = useState<Gasto[]>([]);
+    const [mensajeExito, setMensajeExito] = useState('');
 
     const [buscar, setBuscar] = useState('');
     const [filtroTipo, setFiltroTipo] = useState('');
@@ -108,7 +109,8 @@ function Gastos() {
 
             if (response.ok) {
 
-                console.log('Gasto registrado correctamente');
+                setMensajeExito('Gasto registrado correctamente.');
+                setTimeout(() => setMensajeExito(''), 3000);
 
                 setMonto('');
                 setMotivo('');
@@ -217,7 +219,8 @@ function Gastos() {
 
             if (response.ok) {
 
-                console.log(data.message);
+                setMensajeExito('Gasto actualizado correctamente.');
+                setTimeout(() => setMensajeExito(''), 3000);
 
                 setMonto('');
                 setMotivo('');
@@ -282,6 +285,12 @@ function Gastos() {
                     Guardar cambios
                 </button>
 
+            )}
+
+            {mensajeExito && (
+                <p role="status" style={{ color: 'green', fontWeight: 'bold', marginTop: '8px' }}>
+                    {mensajeExito}
+                </p>
             )}
 
             <hr />
