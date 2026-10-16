@@ -504,22 +504,50 @@ function Gastos() {
                             Estado: {gasto.estado}
                         </p>
 
-                        <button
-                            onClick={() => {
-                                if (gasto.estado.toLowerCase().trim() === 'gastado') {
-                                    alert('No se puede editar este gasto porque ya está pagado.');
-                                    return;
-                                }
+                        <div style={{ display: 'flex', gap: '14px', marginTop: '12px', alignItems: 'center' }}>
+                            <button
+                                onClick={() => {
+                                    if (gasto.estado.toLowerCase().trim() === 'gastado') {
+                                        alert('No se puede editar este gasto porque ya está pagado.');
+                                        return;
+                                    }
 
-                                handleEditarGasto(gasto);
-                            }}
-                        >
-                            Editar
-                        </button>
+                                    handleEditarGasto(gasto);
+                                }}
+                                style={{
+                                    backgroundColor: '#1976d2',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '9px 18px',
+                                    fontSize: '0.95em',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 4px rgba(25, 118, 210, 0.25)',
+                                    transition: 'background-color 0.2s'
+                                }}
+                            >
+                                Editar
+                            </button>
 
-                        <button onClick={() => handleEliminarGasto(gasto.id)}>
-                            Eliminar
-                        </button>
+                            <button
+                                onClick={() => handleEliminarGasto(gasto.id)}
+                                style={{
+                                    backgroundColor: '#d32f2f',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '9px 18px',
+                                    fontSize: '0.95em',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 4px rgba(211, 47, 47, 0.25)',
+                                    transition: 'background-color 0.2s'
+                                }}
+                            >
+                                Eliminar
+                            </button>
+                        </div>
 
                             <hr />
 

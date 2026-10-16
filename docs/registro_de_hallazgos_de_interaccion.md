@@ -8,7 +8,7 @@ Documento de análisis de interacción humano-computador basado en leyes clásic
 
 | # | Hallazgo | Captura obligatoria | Justificación breve | Estado al terminar |
 |---|----------|---------------------|---------------------|--------------------|
-| 1 | **Ley de Fitts**<br>*(¿La acción es suficientemente grande y cercana?)*<br>Botones de acción "Editar" y "Eliminar" con tamaño reducido y colocados contiguos sin margen de seguridad en la lista de movimientos. | **Vista: Gastos (`Gastos.tsx`)**<br><br>![Captura Ley de Fitts](evidencias/evidencia%20Fitts.png) | Los botones "Editar" y "Eliminar" de cada movimiento carecen de un área de toque o padding mínimo ergonómico (target size reducido). Además, están dispuestos de forma contigua sin espaciado de seguridad. De acuerdo con la Ley de Fitts ($T = a + b \log_2(2D/W)$), un ancho de objetivo ($W$) pequeño combinado con una distancia casi nula respecto a una acción destructiva ("Eliminar") incrementa el tiempo de apuntado y la probabilidad de clics erróneos accidentales. | **Documentado** |
+| 1 | **Ley de Fitts**<br>*(¿La acción es suficientemente grande y cercana?)*<br>Botones de acción "Editar" y "Eliminar" con tamaño reducido y colocados contiguos sin margen de seguridad en la lista de movimientos. | **Vista: Gastos (`Gastos.tsx`)**<br><br>**Antes:**<br>![Fitts Antes](evidencias/clase_16/evidencia%20Fitts.png)<br><br>**Después:**<br>![Fitts Después](evidencias/clase_16/evidencia%20Fitts%20despues.png) | Los botones "Editar" y "Eliminar" de cada movimiento carecían de un área de toque o padding mínimo ergonómico (target size reducido). Además, estaban dispuestos de forma contigua sin espaciado de seguridad. De acuerdo con la Ley de Fitts ($T = a + b \log_2(2D/W)$), un ancho de objetivo ($W$) pequeño combinado con una distancia casi nula respecto a una acción destructiva ("Eliminar") incrementaba el tiempo de apuntado y la probabilidad de clics erróneos accidentales. | **Corregido** |
 | 2 | **Ley de Hick**<br>*(Opciones que compiten antes de decidir)*<br>Sobrecarga simultánea de 5 selectores y criterios de filtrado compitiendo al mismo nivel de jerarquía visual. | **Vista: Gastos (`Gastos.tsx`)**<br><br>![Captura Ley de Hick](evidencias/evidencia%20hick.png) | El panel de búsqueda y filtros expone en un solo bloque 5 controles independientes (Búsqueda por texto, Tipo, Categoría, Estado y Período con fechas). Según la Ley de Hick ($T = b \log_2(n + 1)$), el tiempo de decisión aumenta logarítmicamente con el número y complejidad de opciones compitiendo simultáneamente sin una jerarquía visual o divulgación progresiva. | **Documentado** |
 | 3 | **Carga Cognitiva**<br>*(¿Qué debe recordar o procesar para continuar?)*<br>Ausencia de saldo disponible y contexto financiero al ejecutar un pago, obligando al cálculo y recuerdo mental. | **Vista: Pagos (`Pagos.tsx`)**<br><br>![Captura Carga Cognitiva](evidencias/evidencia%20carga%20cognitiva.png) | En la pantalla de pagos, el usuario debe decidir si liquidar un gasto pendiente, pero la interfaz no le muestra su saldo disponible ni el presupuesto mensual del Dashboard. Para no sobregirarse, el usuario debe recordar de memoria su saldo previo y calcular mentalmente si el monto a pagar cabe en su presupuesto, sobrecargando la memoria de trabajo (carga cognitiva extrínseca). | **Documentado** |
 
@@ -18,16 +18,23 @@ Documento de análisis de interacción humano-computador basado en leyes clásic
 
 ### 1. Hallazgo: Ley de Fitts
 * **Pregunta clave:** *¿La acción es suficientemente grande y cercana?*
-* **Pantalla / Vista:** `Gastos` ([Gastos.tsx](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L507-L523))
+* **Pantalla / Vista:** `Gastos` ([Gastos.tsx](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L507-L555))
 * **Componente y líneas de código:**
-  - Botones de acción en cada tarjeta de movimiento: `<button onClick={...}>Editar</button>` y `<button onClick={...}>Eliminar</button>` ([Gastos.tsx:L507-L523](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L507-L523)).
+  - Botones de acción en cada tarjeta de movimiento: `<button onClick={...}>Editar</button>` y `<button onClick={...}>Eliminar</button>` ([Gastos.tsx:L507-L555](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L507-L555)).
 * **Análisis del problema:**
-  1. **Tamaño del objetivo insuficiente ($W$ reducido):** Los botones "Editar" y "Eliminar" se renderizan con los estilos estándar del navegador sin un padding generoso ni un área mínima táctil recomendada (estándar Fitts / WCAG de al menos 44x44px). Al tener un ancho y alto pequeños, el usuario debe realizar una desaceleración motriz excesiva con el puntero para no errar el clic.
-  2. **Distancia crítica y adyacencia de riesgo:** Ambos botones se encuentran inmediatamente contiguos horizontalmente, sin un margen de separación de seguridad (`margin`) ni diferenciación visual evidente (como colores de advertencia para acciones destructivas). La distancia física entre querer editar un registro y pulsar por accidente "Eliminar" es prácticamente inexistente.
+  1. **Tamaño del objetivo insuficiente ($W$ reducido):** Los botones "Editar" y "Eliminar" se renderizaban con los estilos estándar del navegador sin un padding generoso ni un área mínima táctil recomendada (estándar Fitts / WCAG de al menos 44x44px). Al tener un ancho y alto pequeños, el usuario debía realizar una desaceleración motriz excesiva con el puntero para no errar el clic.
+  2. **Distancia crítica y adyacencia de riesgo:** Ambos botones se encontraban inmediatamente contiguos horizontalmente, sin un margen de separación de seguridad (`margin`) ni diferenciación visual evidente (como colores de advertencia para acciones destructivas). La distancia física entre querer editar un registro y pulsar por accidente "Eliminar" era prácticamente inexistente.
   3. **Distancia a la acción de confirmación:** Al hacer clic en "Editar", la acción consecuente ("Guardar cambios") se activa en el formulario al inicio de la página, obligando al usuario a recorrer una distancia ($D$) considerable hacia arriba en lugar de resolver la acción en el contexto inmediato del registro.
-* **Evidencia visual:**
-  ![Captura Ley de Fitts](evidencias/evidencia%20Fitts.png)
-* **Recomendación de mejora:** Incrementar el tamaño de objetivo (padding mínimo y altura de botón de 40px–44px), establecer una separación física clara entre ambos botones (margen horizontal de seguridad de al menos 12px a 16px) y aplicar diferenciación cromática semántica (botón neutro/azul para "Editar" y botón de alerta/rojo secundario para "Eliminar").
+* **Evidencias visuales (Carpeta `evidencias/clase_16/`):**
+  * **Antes de la corrección (botones pequeños y contiguos sin estilo semántico):**
+    ![Captura Ley de Fitts - Antes](evidencias/clase_16/evidencia%20Fitts.png)
+  * **Después de la corrección (botones ergonómicos, separados con gap 14px y colores de acción):**
+    ![Captura Ley de Fitts - Después](evidencias/clase_16/evidencia%20Fitts%20despues.png)
+* **Solución implementada:**
+  - **Ampliación del target size:** Se aumentó el padding a `9px 18px` con tipografía en negrita (`fontWeight: 'bold'`) y bordes redondeados ergonómicos.
+  - **Margen de seguridad:** Se ubicaron dentro de un contenedor flex con separación explícita de `gap: 14px`, eliminando el riesgo de clic accidental entre acciones opuestas.
+  - **Diferenciación cromática semántica:** El botón **Editar** se estilizó con azul primario (`#1976d2`), y el botón **Eliminar** con rojo de advertencia destructiva (`#d32f2f`).
+* **Estado:** **Corregido**
 
 ---
 
