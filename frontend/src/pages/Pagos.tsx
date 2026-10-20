@@ -28,8 +28,34 @@ function normalizarEstado(estado: string): string {
 function Pagos() {
 
     const [gastos, setGastos] = useState<Gasto[]>([]);
+    const [saldoDisponible, setSaldoDisponible] = useState<number | null>(null);
 
     const token = localStorage.getItem('token');
+
+    const obtenerPresupuesto = async () => {
+        try {
+            const ahora = new Date();
+            const mes = ahora.getMonth() + 1;
+            const anio = ahora.getFullYear();
+
+            const response = await fetch(
+                `http://localhost:4000/api/presupuesto/obtener?mes=${mes}&anio=${anio}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
+            const data = await response.json();
+            if (response.ok && data.disponible !== undefined) {
+                setSaldoDisponible(Number(data.disponible));
+            }
+        } catch (error) {
+            console.error('Error al obtener presupuesto en pagos:', error);
+        }
+    };
 
     const obtenerGastos = async () => {
 
@@ -86,6 +112,7 @@ function Pagos() {
                 console.log(data.message);
 
                 obtenerGastos();
+                obtenerPresupuesto();
 
             } else {
 
@@ -104,6 +131,7 @@ function Pagos() {
     useEffect(() => {
 
         obtenerGastos();
+        obtenerPresupuesto();
 
     }, []);
 
