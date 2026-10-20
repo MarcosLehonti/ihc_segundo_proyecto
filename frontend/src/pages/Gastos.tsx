@@ -27,6 +27,7 @@ function Gastos() {
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
     const [totalFiltrado, setTotalFiltrado] = useState(0);
+    const [mostrarMasFiltros, setMostrarMasFiltros] = useState(false);
 
     const [gastoEditando, setGastoEditando] = useState<number | null>(null);
 
@@ -349,60 +350,151 @@ function Gastos() {
             <section style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
                 <h2>Buscar y Filtrar Movimientos</h2>
 
-                <div>
+                <div style={{ marginBottom: '12px' }}>
                     <input
                         type="text"
                         placeholder="Buscar por concepto o descripción..."
                         value={buscar}
                         onChange={(e) => setBuscar(e.target.value)}
+                        style={{ padding: '8px', width: '100%', maxWidth: '360px', boxSizing: 'border-box' }}
                     />
                 </div>
 
-                <div>
-                    <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
-                        <option value="">Todos los tipos</option>
-                        <option value="gasto">Solo gastos</option>
-                        <option value="ingreso">Solo ingresos</option>
-                    </select>
-
-                    <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
-                        <option value="">Todas las categorías</option>
-                        <option value="comida">Comida</option>
-                        <option value="transporte">Transporte</option>
-                        <option value="estudio">Estudio</option>
-                        <option value="otros">Otros</option>
-                    </select>
-
-                    <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-                        <option value="">Todos los estados</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="pagado">Pagado</option>
-                    </select>
-
-                    <select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value)}>
-                        <option value="">Todos los períodos</option>
-                        <option value="este_mes">Este mes</option>
-                        <option value="mes_anterior">Mes anterior</option>
-                        <option value="rango">Rango de fechas</option>
-                    </select>
-
-                    {filtroPeriodo === 'rango' && (
-                        <div>
-                            <label>Desde: </label>
-                            <input
-                                type="date"
-                                value={fechaDesde}
-                                onChange={(e) => setFechaDesde(e.target.value)}
-                            />
-                            <label>Hasta: </label>
-                            <input
-                                type="date"
-                                value={fechaHasta}
-                                onChange={(e) => setFechaHasta(e.target.value)}
-                            />
-                        </div>
-                    )}
+                {/* Accesos directos principales para reducir opciones simultaneas (Ley de Hick) */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>Filtros rápidos:</span>
+                    <button
+                        type="button"
+                        onClick={() => { setFiltroTipo(''); setFiltroPeriodo(''); }}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: (!filtroTipo && !filtroPeriodo) ? '#d0d7de' : '#f6f8fa',
+                            border: '1px solid #d0d7de',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Todos
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroTipo(filtroTipo === 'gasto' ? '' : 'gasto')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: filtroTipo === 'gasto' ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Solo gastos
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroTipo(filtroTipo === 'ingreso' ? '' : 'ingreso')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: filtroTipo === 'ingreso' ? '#d1e7dd' : '#f6f8fa',
+                            border: '1px solid #a3cfbb',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Solo ingresos
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroPeriodo(filtroPeriodo === 'este_mes' ? '' : 'este_mes')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: filtroPeriodo === 'este_mes' ? '#fff3cd' : '#f6f8fa',
+                            border: '1px solid #ffe69c',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Este mes
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMostrarMasFiltros(!mostrarMasFiltros)}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: mostrarMasFiltros ? '#e9ecef' : '#ffffff',
+                            border: '1px solid #6c757d',
+                            borderRadius: '6px',
+                            marginLeft: '4px'
+                        }}
+                    >
+                        {mostrarMasFiltros ? '▲ Menos filtros' : '▼ Más filtros'}
+                    </button>
                 </div>
+
+                {/* Divulgacion progresiva: solo se muestran los 4 desplegables si el usuario los solicita */}
+                {mostrarMasFiltros && (
+                    <div style={{ padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px solid #e9ecef', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '13px', marginBottom: '3px' }}>Tipo:</label>
+                                <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} style={{ padding: '4px 8px' }}>
+                                    <option value="">Todos los tipos</option>
+                                    <option value="gasto">Solo gastos</option>
+                                    <option value="ingreso">Solo ingresos</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '13px', marginBottom: '3px' }}>Categoría:</label>
+                                <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} style={{ padding: '4px 8px' }}>
+                                    <option value="">Todas las categorías</option>
+                                    <option value="comida">Comida</option>
+                                    <option value="transporte">Transporte</option>
+                                    <option value="estudio">Estudio</option>
+                                    <option value="otros">Otros</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '13px', marginBottom: '3px' }}>Estado:</label>
+                                <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} style={{ padding: '4px 8px' }}>
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="pagado">Pagado</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '13px', marginBottom: '3px' }}>Período:</label>
+                                <select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value)} style={{ padding: '4px 8px' }}>
+                                    <option value="">Todos los períodos</option>
+                                    <option value="este_mes">Este mes</option>
+                                    <option value="mes_anterior">Mes anterior</option>
+                                    <option value="rango">Rango de fechas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {filtroPeriodo === 'rango' && (
+                            <div style={{ marginTop: '10px' }}>
+                                <label>Desde: </label>
+                                <input
+                                    type="date"
+                                    value={fechaDesde}
+                                    onChange={(e) => setFechaDesde(e.target.value)}
+                                    style={{ padding: '4px', marginRight: '10px' }}
+                                />
+                                <label>Hasta: </label>
+                                <input
+                                    type="date"
+                                    value={fechaHasta}
+                                    onChange={(e) => setFechaHasta(e.target.value)}
+                                    style={{ padding: '4px' }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {(buscar || filtroTipo || filtroCategoria || filtroEstado || filtroPeriodo) && (
                     <div style={{ marginTop: '10px' }}>

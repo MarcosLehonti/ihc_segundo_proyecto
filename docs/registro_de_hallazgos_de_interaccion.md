@@ -9,7 +9,7 @@ Documento de análisis de interacción humano-computador basado en leyes clásic
 | # | Hallazgo | Captura obligatoria | Justificación breve | Estado al terminar |
 |---|----------|---------------------|---------------------|--------------------|
 | 1 | **Ley de Fitts**<br>*(¿La acción es suficientemente grande y cercana?)*<br>Botones de acción "Editar" y "Eliminar" con tamaño reducido y colocados contiguos sin margen de seguridad en la lista de movimientos. | **Vista: Gastos (`Gastos.tsx`)**<br><br>**Antes:**<br>![Fitts Antes](evidencias/clase_16/evidencia%20Fitts.png)<br><br>**Después:**<br>![Fitts Después](evidencias/clase_16/evidencia%20Fitts%20despues.png) | Los botones "Editar" y "Eliminar" de cada movimiento carecían de un área de toque o padding mínimo ergonómico (target size reducido). Además, estaban dispuestos de forma contigua sin espaciado de seguridad. De acuerdo con la Ley de Fitts ($T = a + b \log_2(2D/W)$), un ancho de objetivo ($W$) pequeño combinado con una distancia casi nula respecto a una acción destructiva ("Eliminar") incrementaba el tiempo de apuntado y la probabilidad de clics erróneos accidentales. | **Corregido** |
-| 2 | **Ley de Hick**<br>*(Opciones que compiten antes de decidir)*<br>Sobrecarga simultánea de 5 selectores y criterios de filtrado compitiendo al mismo nivel de jerarquía visual. | **Vista: Gastos (`Gastos.tsx`)**<br><br>![Captura Ley de Hick](evidencias/evidencia%20hick.png) | El panel de búsqueda y filtros expone en un solo bloque 5 controles independientes (Búsqueda por texto, Tipo, Categoría, Estado y Período con fechas). Según la Ley de Hick ($T = b \log_2(n + 1)$), el tiempo de decisión aumenta logarítmicamente con el número y complejidad de opciones compitiendo simultáneamente sin una jerarquía visual o divulgación progresiva. | **Documentado** |
+| 2 | **Ley de Hick**<br>*(Opciones que compiten antes de decidir)*<br>Sobrecarga simultánea de 5 selectores y criterios de filtrado compitiendo al mismo nivel de jerarquía visual. | **Vista: Gastos (`Gastos.tsx`)**<br><br>**Antes:**<br>![Hick Antes](evidencias/clase_16/evidencia%20de%20Hick.png)<br><br>**Después:**<br>![Hick Después](evidencias/clase_16/evidencia%20de%20Hick%20despues.png) | El panel de búsqueda y filtros exponía en un solo bloque 5 controles independientes sin jerarquía visual. Según la Ley de Hick ($T = b \log_2(n + 1)$), el tiempo de decisión aumentaba logarítmicamente con el número de opciones compitiendo a la vez. Se implementó divulgación progresiva con accesos directos rápidos ("Todos", "Solo gastos", "Solo ingresos", "Este mes") y un botón para desplegar/ocultar los filtros avanzados secundarios bajo demanda. | **Corregido** |
 | 3 | **Carga Cognitiva**<br>*(¿Qué debe recordar o procesar para continuar?)*<br>Ausencia de saldo disponible y contexto financiero al ejecutar un pago, obligando al cálculo y recuerdo mental. | **Vista: Pagos (`Pagos.tsx`)**<br><br>![Captura Carga Cognitiva](evidencias/evidencia%20carga%20cognitiva.png) | En la pantalla de pagos, el usuario debe decidir si liquidar un gasto pendiente, pero la interfaz no le muestra su saldo disponible ni el presupuesto mensual del Dashboard. Para no sobregirarse, el usuario debe recordar de memoria su saldo previo y calcular mentalmente si el monto a pagar cabe en su presupuesto, sobrecargando la memoria de trabajo (carga cognitiva extrínseca). | **Documentado** |
 
 ---
@@ -40,16 +40,22 @@ Documento de análisis de interacción humano-computador basado en leyes clásic
 
 ### 2. Hallazgo: Ley de Hick
 * **Pregunta clave:** *Opciones que compiten antes de decidir.*
-* **Pantalla / Vista:** `Gastos` ([Gastos.tsx](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L349-L405))
+* **Pantalla / Vista:** `Gastos` ([Gastos.tsx](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L350-L450))
 * **Componente y líneas de código:**
-  - Sección `<section>` con buscador e inputs `<select>`: búsqueda textual, `filtroTipo`, `filtroCategoria`, `filtroEstado`, `filtroPeriodo` ([Gastos.tsx:L349-L405](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L349-L405)).
+  - Sección `<section>` con buscador, accesos rápidos y panel desplegable de filtros: `buscar`, `filtroTipo`, `filtroCategoria`, `filtroEstado`, `filtroPeriodo` ([Gastos.tsx:L350-L450](file:///c:/Users/HP/Desktop/Universidad/Interaccion%20Hombre%20Computador/segundo_proyecto/frontend/src/pages/Gastos.tsx#L350-L450)).
 * **Análisis del problema:**
-  1. **Competencia visual y decisional:** Al ingresar a la sección de movimientos, el usuario se encuentra con 5 controles desplegados simultáneamente en un mismo contenedor, cada uno con entre 3 y 5 opciones internas diferentes (más de 15 bifurcaciones posibles a primera vista).
-  2. **Falta de ordenamiento progresivo:** No existe un filtro primario recomendado (por ejemplo, ver simplemente "Mes actual" o "Todos") ni filtros colapsables bajo un botón secundario de "Filtros avanzados".
-  3. **Impacto en el usuario:** Se incrementa de forma directa el tiempo de selección y la indecisión al obligar al usuario a escanear mentalmente todos los menús desplegables antes de poder localizar una transacción específica.
-* **Evidencia visual:**
-  ![Captura Ley de Hick](evidencias/evidencia%20hick.png)
-* **Recomendación de mejora:** Aplicar el principio de **divulgación progresiva (progressive disclosure)**: mantener una barra de búsqueda rápida visible y agrupar los filtros secundarios bajo un desplegable colapsable o botones con los filtros más comunes ya preseleccionados (chips rápidos: "Este mes", "Solo gastos").
+  1. **Competencia visual y decisional:** Al ingresar a la sección de movimientos, el usuario se encontraba con 5 controles desplegados simultáneamente en un mismo contenedor, cada uno con entre 3 y 5 opciones internas diferentes (más de 15 bifurcaciones posibles a primera vista).
+  2. **Falta de ordenamiento progresivo:** No existía un filtro primario recomendado (por ejemplo, ver simplemente "Mes actual" o "Todos") ni filtros colapsables bajo un botón secundario de "Filtros avanzados".
+  3. **Impacto en el usuario:** Se incrementaba de forma directa el tiempo de selección y la indecisión al obligar al usuario a escanear mentalmente todos los menús desplegables antes de poder localizar una transacción específica ($T = b \log_2(n + 1)$).
+* **Evidencias visuales (Carpeta `evidencias/clase_16/`):**
+  * **Antes de la corrección (5 selectores compitiendo simultáneamente sin jerarquía):**
+    ![Captura Ley de Hick - Antes](evidencias/clase_16/evidencia%20de%20Hick.png)
+  * **Después de la corrección (divulgación progresiva con accesos rápidos y desplegable bajo demanda):**
+    ![Captura Ley de Hick - Después](evidencias/clase_16/evidencia%20de%20Hick%20despues.png)
+* **Solución implementada:**
+  - **Divulgación progresiva (Progressive Disclosure):** Se mantuvo la barra de búsqueda rápida visible y se crearon botones de filtro rápido para las opciones más comunes (*"Todos"*, *"Solo gastos"*, *"Solo ingresos"*, *"Este mes"*), reduciendo drásticamente las alternativas ($n$) a primera vista.
+  - **Ocultamiento de filtros secundarios:** Los 4 menús desplegables (`Tipo`, `Categoría`, `Estado`, `Período`) se agruparon en un contenedor secundario colapsable controlado mediante el botón *"▼ Más filtros"* / *"▲ Menos filtros"*, evitando que compitan visualmente de inicio.
+* **Estado:** **Corregido**
 
 ---
 
