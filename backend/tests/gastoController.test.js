@@ -381,3 +381,39 @@ describe('obtenerHistorialMesActual - Consulta del Mes (Sub-issue #24)', () => {
     });
 
 });
+
+describe('obtenerHistorialMesActual - Filtro de Usuario y Rango Mensual (Sub-issue #26)', () => {
+
+    test('debe validar que la consulta solo traiga datos del usuario correcto en el mes actual', async () => {
+        const movimientosUsuario = [
+            { id: 10, monto: 150, motivo: 'Materiales', userId: 77, fecha: new Date() }
+        ];
+
+        Gasto.findAll.mockResolvedValue(movimientosUsuario);
+
+        const req = {
+            user: { id: 77 }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await obtenerHistorialMesActual(req, res);
+
+        expect(Gasto.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    userId: 77,
+                    fecha: expect.any(Object)
+                }),
+                order: [['fecha', 'DESC']]
+            })
+        );
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(movimientosUsuario);
+    });
+
+});
