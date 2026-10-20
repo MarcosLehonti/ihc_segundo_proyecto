@@ -21,10 +21,22 @@ function Historial() {
     const token = localStorage.getItem('token');
 
     const cargarHistorial = async () => {
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
         try {
             const response = await fetch('http://localhost:4000/api/gastos/historial-mes', {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('token');
+                navigate('/login');
+                return;
+            }
+
             const data = await response.json();
             if (response.ok) {
                 setMovimientos(Array.isArray(data) ? data : []);
