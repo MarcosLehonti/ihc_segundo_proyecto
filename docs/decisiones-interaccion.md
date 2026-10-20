@@ -8,9 +8,9 @@ Documento de justificación técnica y ergonomía de interacción para la funcio
 
 | # | Decisión de Diseño | Principio HCI | Antes | Después | Estado |
 |---|--------------------|---------------|-------|---------|--------|
-| 1 | **Acceso ergonómico y visible al Historial** | **Ley de Fitts**<br>*(Objetivo táctil fácil de alcanzar)* | ![Fitts Antes](evidencias/evidencia%20fitts%20historial%20antes.png) | *(Captura pendiente)* | En desarrollo |
-| 2 | **Organización limpia por pestañas rápidas** | **Ley de Hick**<br>*(Minimizar alternativas simultáneas)* | ![Hick Antes](evidencias/evidencia%20hick%20historial%20antes.png) | *(Captura pendiente)* | En desarrollo |
-| 3 | **Contexto inmediato y Estado Vacío orientativo** | **Carga Cognitiva**<br>*(Evitar memoria de trabajo y split-attention)* | ![Cognitiva Antes](evidencias/evidencia%20cognitiva%20historial%20antes.png) | *(Captura pendiente)* | En desarrollo |
+| 1 | **Acceso ergonómico y visible al Historial** | **Ley de Fitts**<br>*(Objetivo táctil fácil de alcanzar)* | ![Fitts Antes](evidencias/evidencia%20fitts%20historial%20antes.png) | ![Fitts Después](evidencias/evidencia%20fitts%20historial%20despues.png) | **Implementado** |
+| 2 | **Organización limpia por pestañas rápidas** | **Ley de Hick**<br>*(Minimizar alternativas simultáneas)* | ![Hick Antes](evidencias/evidencia%20hick%20historial%20antes.png) | ![Hick Después](evidencias/evidencia%20hick%20historial%20despues.png) | **Implementado** |
+| 3 | **Contexto inmediato y Estado Vacío orientativo** | **Carga Cognitiva**<br>*(Evitar memoria de trabajo y split-attention)* | ![Cognitiva Antes](evidencias/evidencia%20cognitiva%20historial%20antes.png) | ![Cognitiva Después](evidencias/evidencia%20cognitiva%20historial%20despues.png) | **Implementado** |
 
 ---
 
@@ -31,7 +31,7 @@ De acuerdo con la **Ley de Fitts** ($T = a + b \log_2(2D/W)$), el tiempo para al
   * **Antes:**
     ![Fitts Antes](evidencias/evidencia%20fitts%20historial%20antes.png)
   * **Después:**
-    *(Espacio para captura del después con el botón Historial en el Navbar)*
+    ![Fitts Después](evidencias/evidencia%20fitts%20historial%20despues.png)
 
 ---
 
@@ -55,7 +55,7 @@ Según la **Ley de Hick** ($T = b \log_2(n + 1)$), el tiempo necesario para toma
   * **Antes:**
     ![Hick Antes](evidencias/evidencia%20hick%20historial%20antes.png)
   * **Después:**
-    *(Espacio para captura del después con los tabs rápidos en el Historial)*
+    ![Hick Después](evidencias/evidencia%20hick%20historial%20despues.png)
 
 ---
 
@@ -80,4 +80,4 @@ La **Teoría de Carga Cognitiva** (Sweller) indica que la memoria de trabajo hum
   * **Antes:**
     ![Cognitiva Antes](evidencias/evidencia%20cognitiva%20historial%20antes.png)
   * **Después:**
-    *(Espacio para captura del después con resumen mensual y estado vacío / tarjetas en Historial)*
+    ![Cognitiva Después](evidencias/evidencia%20cognitiva%20historial%20despues.png)
