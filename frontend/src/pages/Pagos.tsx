@@ -141,6 +141,39 @@ function Pagos() {
 
             <h1>Pagos</h1>
 
+            {/* Contexto financiero para reducir la carga cognitiva (centrado en la pantalla) */}
+            <div style={{
+                backgroundColor: '#f0f4f8',
+                border: '1px solid #d0d7de',
+                borderRadius: '8px',
+                padding: '16px 20px',
+                margin: '20px auto 30px auto',
+                maxWidth: '480px',
+                textAlign: 'center',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+            }}>
+                <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#1f2328' }}>
+                    Resumen Financiero del Mes
+                </h3>
+                <p style={{ margin: '6px 0', fontSize: '16px' }}>
+                    <strong>Saldo disponible: </strong>
+                    {saldoDisponible !== null ? (
+                        <span style={{
+                            color: saldoDisponible >= 0 ? '#1a7f37' : '#cf222e',
+                            fontWeight: 'bold',
+                            fontSize: '18px'
+                        }}>
+                            Bs {saldoDisponible.toFixed(2)}
+                        </span>
+                    ) : (
+                        <span>Consultando presupuesto...</span>
+                    )}
+                </p>
+                <small style={{ color: '#57606a', display: 'block', marginTop: '6px' }}>
+                    Información actualizada del presupuesto para tomar decisiones de pago sin calcular de memoria.
+                </small>
+            </div>
+
             <h2>Lista de gastos</h2>
 
             {gastos.map((gasto) => (
@@ -170,6 +203,32 @@ function Pagos() {
                     <p>
                         Estado: {normalizarEstado(gasto.estado)}
                     </p>
+
+                    {/* Calculo mental asistido: muestra el impacto financiero inmediato */}
+                    {gasto.estado.toLowerCase().trim() !== 'gastado' && saldoDisponible !== null && (
+                        <div style={{
+                            backgroundColor: '#f6f8fa',
+                            border: '1px dashed #d0d7de',
+                            borderRadius: '6px',
+                            padding: '8px 12px',
+                            margin: '10px 0',
+                            maxWidth: '400px'
+                        }}>
+                            <span style={{ fontSize: '13px', display: 'block' }}>
+                                Saldo restante tras este pago:{' '}
+                                <strong style={{
+                                    color: (saldoDisponible - gasto.monto) >= 0 ? '#1a7f37' : '#cf222e'
+                                }}>
+                                    Bs {(saldoDisponible - gasto.monto).toFixed(2)}
+                                </strong>
+                            </span>
+                            {(saldoDisponible - gasto.monto) < 0 && (
+                                <span style={{ fontSize: '12px', color: '#cf222e', fontWeight: 'bold' }}>
+                                    ⚠️ Atención: Este pago superará tu saldo disponible actual.
+                                </span>
+                            )}
+                        </div>
+                    )}
 
                     <button
                         onClick={() => handlePagarGasto(gasto.id)}
