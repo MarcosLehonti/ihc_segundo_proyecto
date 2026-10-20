@@ -390,4 +390,39 @@ async function filtrarGastos(req, res) {
     }
 }
 
-module.exports = { registrarGasto, obtenerGastos, eliminarGasto, editarGasto, pagarGasto, filtrarGastos };
+async function obtenerHistorialMesActual(req, res) {
+    try {
+        const userId = req.user.id;
+        const ahora = new Date();
+        const anio = ahora.getFullYear();
+        const mes = ahora.getMonth();
+
+        const inicioMes = new Date(anio, mes, 1, 0, 0, 0, 0);
+        const finMes = new Date(anio, mes + 1, 0, 23, 59, 59, 999);
+
+        const movimientos = await Gasto.findAll({
+            where: {
+                userId,
+                fecha: {
+                    [Op.gte]: inicioMes,
+                    [Op.lte]: finMes
+                }
+            }
+        });
+
+        return res.status(200).json(movimientos);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error al consultar movimientos del mes' });
+    }
+}
+
+module.exports = {
+    registrarGasto,
+    obtenerGastos,
+    eliminarGasto,
+    editarGasto,
+    pagarGasto,
+    filtrarGastos,
+    obtenerHistorialMesActual
+};
