@@ -1,4 +1,4 @@
-const { pagarGasto, editarGasto, eliminarGasto, registrarGasto, obtenerGastos } = require('../src/controllers/gastoController');
+const { pagarGasto, editarGasto, eliminarGasto, registrarGasto, obtenerGastos, obtenerHistorialMesActual } = require('../src/controllers/gastoController');
 
 const Gasto = require('../src/models/Gasto');
 const Presupuesto = require('../src/models/Presupuesto');
@@ -340,6 +340,44 @@ describe('obtenerGastos - Persistencia tras Recargar (Sub-issue #23)', () => {
             where: { userId: 15 }
         });
         expect(res.json).toHaveBeenCalledWith(movimientosPersistidos);
+    });
+
+});
+
+describe('obtenerHistorialMesActual - Consulta del Mes (Sub-issue #24)', () => {
+
+    test('debe responder 200 con los movimientos del mes actual para el usuario autenticado', async () => {
+        const movimientosMes = [
+            { id: 1, monto: 75, motivo: 'Cena', userId: 9, fecha: new Date() }
+        ];
+
+        Gasto.findAll.mockResolvedValue(movimientosMes);
+
+        const req = { user: { id: 9 } };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await obtenerHistorialMesActual(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(movimientosMes);
+    });
+
+    test('debe devolver 500 si la base de datos falla al consultar el historial', async () => {
+        Gasto.findAll.mockRejectedValue(new Error('Fallo de BD'));
+
+        const req = { user: { id: 9 } };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await obtenerHistorialMesActual(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({ error: 'Error al consultar movimientos del mes' });
     });
 
 });
