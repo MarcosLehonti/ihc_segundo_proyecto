@@ -9,7 +9,9 @@ function Navbar() {
     };
 
     const linkStyle = ({ isActive }: { isActive: boolean }) => ({
-        padding: '8px 14px',
+        padding: '10px 16px',
+        minHeight: '44px',
+        boxSizing: 'border-box' as const,
         textDecoration: 'none',
         borderRadius: '6px',
         fontWeight: (isActive ? 'bold' : '500') as 'bold' | '500',
@@ -17,7 +19,8 @@ function Navbar() {
         color: isActive ? '#ffffff' : 'inherit',
         border: isActive ? '1px solid #005bb5' : '1px solid #ccc',
         transition: 'all 0.2s ease',
-        display: 'inline-block'
+        display: 'inline-flex',
+        alignItems: 'center'
     });
 
     return (
@@ -48,6 +51,9 @@ function Navbar() {
                 </NavLink>
                 <NavLink to="/pagos" style={linkStyle}>
                     Pagos
+                </NavLink>
+                <NavLink to="/historial" style={linkStyle}>
+                    Historial
                 </NavLink>
             </nav>
 

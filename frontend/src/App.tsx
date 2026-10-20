@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Pagos from './pages/Pagos';
+import Historial from './pages/Historial';
 
 function App() {
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/gastos" element={<Gastos />} />
           <Route path="/pagos" element={<Pagos />} />
+          <Route path="/historial" element={<Historial />} />
 
         </Route>
 
