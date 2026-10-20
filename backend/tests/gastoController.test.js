@@ -1,8 +1,10 @@
-const { pagarGasto, editarGasto, eliminarGasto } = require('../src/controllers/gastoController');
+const { pagarGasto, editarGasto, eliminarGasto, registrarGasto } = require('../src/controllers/gastoController');
 
 const Gasto = require('../src/models/Gasto');
+const Presupuesto = require('../src/models/Presupuesto');
 
 jest.mock('../src/models/Gasto');
+jest.mock('../src/models/Presupuesto');
 
 describe('pagarGasto', () => {
 
@@ -271,6 +273,44 @@ describe('pagarGasto', () => {
 
         expect(gasto.destroy).not.toHaveBeenCalled();
 
+    });
+
+});
+
+describe('registrarGasto - Asignación de Usuario (Sub-issue #23)', () => {
+
+    test('debe asociar obligatoriamente el gasto al usuario autenticado (userId)', async () => {
+        Presupuesto.findOne.mockResolvedValue({ limite: 1000 });
+        Gasto.findAll.mockResolvedValue([]);
+        Gasto.create.mockImplementation(data => Promise.resolve({ id: 10, ...data }));
+
+        const req = {
+            body: {
+                monto: 120,
+                motivo: 'Materiales de estudio',
+                tipo: 'gasto',
+                categoria: 'estudio'
+            },
+            user: {
+                id: 42
+            }
+        };
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await registrarGasto(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(Gasto.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: 42,
+                monto: 120,
+                motivo: 'Materiales de estudio'
+            })
+        );
     });
 
 });
