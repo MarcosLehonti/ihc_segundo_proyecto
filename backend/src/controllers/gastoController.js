@@ -407,7 +407,8 @@ async function obtenerHistorialMesActual(req, res) {
                     [Op.gte]: inicioMes,
                     [Op.lte]: finMes
                 }
-            }
+            },
+            order: [['fecha', 'DESC']]
         });
 
         return res.status(200).json(movimientos);
