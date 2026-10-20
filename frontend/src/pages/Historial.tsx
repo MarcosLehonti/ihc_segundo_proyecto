@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 
 interface Movimiento {
     id: number;
@@ -65,10 +64,8 @@ function Historial() {
     const nombreMes = ahora.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
 
     return (
-        <div>
-            <Navbar />
-            <main style={{ maxWidth: '800px', margin: '0 auto', padding: '16px' }}>
-                <h1 style={{ marginBottom: '8px' }}>Historial de Movimientos del Mes</h1>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '16px' }}>
+            <h1 style={{ marginBottom: '8px' }}>Historial de Movimientos del Mes</h1>
                 <p style={{ color: '#57606a', textTransform: 'capitalize', marginTop: '0' }}>
                     Período actual: {nombreMes}
                 </p>
@@ -247,7 +244,6 @@ function Historial() {
                         })}
                     </div>
                 )}
-            </main>
         </div>
     );
 }
