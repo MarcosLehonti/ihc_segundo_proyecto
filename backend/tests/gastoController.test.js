@@ -1,4 +1,4 @@
-const { pagarGasto, editarGasto, eliminarGasto, registrarGasto } = require('../src/controllers/gastoController');
+const { pagarGasto, editarGasto, eliminarGasto, registrarGasto, obtenerGastos } = require('../src/controllers/gastoController');
 
 const Gasto = require('../src/models/Gasto');
 const Presupuesto = require('../src/models/Presupuesto');
@@ -311,6 +311,35 @@ describe('registrarGasto - Asignación de Usuario (Sub-issue #23)', () => {
                 motivo: 'Materiales de estudio'
             })
         );
+    });
+
+});
+
+describe('obtenerGastos - Persistencia tras Recargar (Sub-issue #23)', () => {
+
+    test('debe recuperar todos los movimientos persistidos en BD para el usuario autenticado', async () => {
+        const movimientosPersistidos = [
+            { id: 1, monto: 50, motivo: 'Almuerzo', userId: 15, estado: 'gastado' },
+            { id: 2, monto: 120, motivo: 'Libros', userId: 15, estado: 'pendiente' }
+        ];
+
+        Gasto.findAll.mockResolvedValue(movimientosPersistidos);
+
+        const req = {
+            user: { id: 15 }
+        };
+
+        const res = {
+            json: jest.fn(),
+            status: jest.fn().mockReturnThis()
+        };
+
+        await obtenerGastos(req, res);
+
+        expect(Gasto.findAll).toHaveBeenCalledWith({
+            where: { userId: 15 }
+        });
+        expect(res.json).toHaveBeenCalledWith(movimientosPersistidos);
     });
 
 });
