@@ -32,6 +32,13 @@ Thumbs.db
 *.swp
 
 # Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.playwright-browsers/
+
+# Playwright
 /test-results/
 /playwright-report/
 /blob-report/

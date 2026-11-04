@@ -29,6 +29,25 @@ interface PresupuestoCategoriaItem {
     restante: number | null;
 }
 
+interface GastoRecurrente {
+    id: number;
+    monto: string | number;
+    motivo: string;
+    categoria: string;
+    frecuencia: 'semanal' | 'mensual';
+    proximaFecha: string;
+    activa: boolean;
+    ultimoError: string | null;
+}
+
+function fechaLocalInput() {
+    const fecha = new Date();
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 const CATEGORIAS = [
     { valor: 'otros', etiqueta: 'Otros' },
     { valor: 'comida', etiqueta: 'Comida' },
@@ -48,6 +67,14 @@ function Dashboard() {
     const [limiteCategoria, setLimiteCategoria] = useState('');
     const [mensajeCategoria, setMensajeCategoria] = useState('');
     const [errorCategoria, setErrorCategoria] = useState('');
+    const [gastosRecurrentes, setGastosRecurrentes] = useState<GastoRecurrente[]>([]);
+    const [montoRecurrente, setMontoRecurrente] = useState('');
+    const [motivoRecurrente, setMotivoRecurrente] = useState('');
+    const [categoriaRecurrente, setCategoriaRecurrente] = useState('otros');
+    const [frecuenciaRecurrente, setFrecuenciaRecurrente] = useState<'semanal' | 'mensual'>('semanal');
+    const [fechaInicioRecurrente, setFechaInicioRecurrente] = useState(fechaLocalInput);
+    const [mensajeRecurrente, setMensajeRecurrente] = useState('');
+    const [errorRecurrente, setErrorRecurrente] = useState('');
 
     const navigate = useNavigate();
 
@@ -128,6 +155,27 @@ function Dashboard() {
         }
     };
 
+    const cargarGastosRecurrentes = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch('http://localhost:4000/api/gastos-recurrentes', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setGastosRecurrentes(data.recurrentes || []);
+                setErrorRecurrente('');
+            } else {
+                setErrorRecurrente(data.error || 'No se pudieron cargar las recurrencias');
+            }
+        } catch (error) {
+            console.error('Error al obtener gastos recurrentes:', error);
+            setErrorRecurrente('No se pudo conectar con el servidor');
+        }
+    };
+
     useEffect(() => {
         const getUser = async () => {
             const token = localStorage.getItem('token');
@@ -163,6 +211,7 @@ function Dashboard() {
                 setError('No se pudo obtener la información del usuario');
             }
 
+            await cargarGastosRecurrentes();
             await cargarPresupuesto();
             await cargarPresupuestoCategoria();
             setCargando(false);
@@ -304,6 +353,83 @@ function Dashboard() {
         } catch (error) {
             console.error('Error al guardar el presupuesto por categoría:', error);
             setErrorCategoria('No se pudo conectar con el servidor');
+        }
+    };
+
+    const handleGuardarGastoRecurrente = async (
+        event: React.FormEvent<HTMLFormElement>
+    ) => {
+        event.preventDefault();
+        setMensajeRecurrente('');
+        setErrorRecurrente('');
+
+        const montoNumero = Number(montoRecurrente);
+        if (!Number.isFinite(montoNumero) || montoNumero <= 0 || !motivoRecurrente.trim()) {
+            setErrorRecurrente('Ingresa un monto positivo y un motivo');
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:4000/api/gastos-recurrentes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    monto: montoNumero,
+                    motivo: motivoRecurrente,
+                    categoria: categoriaRecurrente,
+                    frecuencia: frecuenciaRecurrente,
+                    fechaInicio: fechaInicioRecurrente
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                setErrorRecurrente(data.error || 'No se pudo guardar el gasto recurrente');
+                return;
+            }
+
+            setMensajeRecurrente(data.message || 'Gasto recurrente guardado correctamente');
+            setMontoRecurrente('');
+            setMotivoRecurrente('');
+            setFechaInicioRecurrente(fechaLocalInput());
+            await cargarGastosRecurrentes();
+            await cargarPresupuesto();
+            await cargarPresupuestoCategoria();
+        } catch (error) {
+            console.error('Error al guardar el gasto recurrente:', error);
+            setErrorRecurrente('No se pudo conectar con el servidor');
+        }
+    };
+
+    const handleDesactivarGastoRecurrente = async (id: number) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:4000/api/gastos-recurrentes/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                setErrorRecurrente(data.error || 'No se pudo desactivar la recurrencia');
+                return;
+            }
+            setMensajeRecurrente(data.message || 'Gasto recurrente desactivado correctamente');
+            await cargarGastosRecurrentes();
+        } catch (error) {
+            console.error('Error al desactivar el gasto recurrente:', error);
+            setErrorRecurrente('No se pudo conectar con el servidor');
         }
     };
 
@@ -469,6 +595,112 @@ function Dashboard() {
 
                 {mensajeCategoria && <p role="status">{mensajeCategoria}</p>}
                 {errorCategoria && <p role="alert">{errorCategoria}</p>}
+            </section>
+
+            <hr />
+
+            <section id="gastos-recurrentes">
+                <h2>Gastos recurrentes</h2>
+                <p>Programa gastos semanales o mensuales y revisa su próxima ocurrencia.</p>
+
+                {gastosRecurrentes.length === 0 ? (
+                    <p role="status">No tienes gastos recurrentes. Puedes crear uno con el formulario.</p>
+                ) : (
+                    <ul>
+                        {gastosRecurrentes.map((recurrente) => (
+                            <li key={recurrente.id}>
+                                <strong>{recurrente.motivo}</strong>
+                                <p>Monto: Bs {Number(recurrente.monto).toFixed(2)}</p>
+                                <p>Categoría: {recurrente.categoria}</p>
+                                <p>Frecuencia: {recurrente.frecuencia}</p>
+                                <p>
+                                    Próxima ocurrencia:{' '}
+                                    <time dateTime={recurrente.proximaFecha}>
+                                        {new Date(`${recurrente.proximaFecha}T12:00:00`).toLocaleDateString()}
+                                    </time>
+                                </p>
+                                <p>Estado: {recurrente.activa ? 'Activa' : 'Inactiva'}</p>
+                                {recurrente.ultimoError && (
+                                    <p role="alert">{recurrente.ultimoError}</p>
+                                )}
+                                {recurrente.activa && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDesactivarGastoRecurrente(recurrente.id)}
+                                    >
+                                        Desactivar recurrencia
+                                    </button>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                <form onSubmit={handleGuardarGastoRecurrente}>
+                    <div>
+                        <label htmlFor="monto-recurrente">Monto recurrente (Bs)</label>
+                        <input
+                            id="monto-recurrente"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={montoRecurrente}
+                            onChange={(event) => setMontoRecurrente(event.target.value)}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="motivo-recurrente">Motivo</label>
+                        <input
+                            id="motivo-recurrente"
+                            type="text"
+                            maxLength={255}
+                            value={motivoRecurrente}
+                            onChange={(event) => setMotivoRecurrente(event.target.value)}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="categoria-recurrente">Categoría</label>
+                        <select
+                            id="categoria-recurrente"
+                            value={categoriaRecurrente}
+                            onChange={(event) => setCategoriaRecurrente(event.target.value)}
+                        >
+                            {CATEGORIAS.map((opcion) => (
+                                <option key={opcion.valor} value={opcion.valor}>
+                                    {opcion.etiqueta}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="frecuencia-recurrente">Frecuencia</label>
+                        <select
+                            id="frecuencia-recurrente"
+                            value={frecuenciaRecurrente}
+                            onChange={(event) => setFrecuenciaRecurrente(event.target.value as 'semanal' | 'mensual')}
+                        >
+                            <option value="semanal">Semanal</option>
+                            <option value="mensual">Mensual</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="fecha-inicio-recurrente">Primera ocurrencia</label>
+                        <input
+                            id="fecha-inicio-recurrente"
+                            type="date"
+                            min={fechaLocalInput()}
+                            value={fechaInicioRecurrente}
+                            onChange={(event) => setFechaInicioRecurrente(event.target.value)}
+                            required
+                        />
+                    </div>
+                    <button type="submit">Guardar gasto recurrente</button>
+                </form>
+
+                {mensajeRecurrente && <p role="status">{mensajeRecurrente}</p>}
+                {errorRecurrente && <p role="alert">{errorRecurrente}</p>}
             </section>
 
             <hr />

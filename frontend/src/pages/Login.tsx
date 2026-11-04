@@ -62,7 +62,6 @@ function Login() {
 
             <input
                 type="email"
-                aria-label="Correo"
                 placeholder="Correo"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -70,7 +69,6 @@ function Login() {
 
             <input
                 type="password"
-                aria-label="Contraseña"
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

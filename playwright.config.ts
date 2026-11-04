@@ -1,66 +1,86 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Configuración de las pruebas E2E de Presupuesto Estudiantil.
- *
- * - La app corre en http://localhost:5173 (Vite) y la API en http://localhost:4000.
- * - Playwright levanta ambos servidores solo; si ya están abiertos, los reutiliza.
- * - workers: 1 porque las pruebas comparten la misma base de datos.
+ * Read environment variables from file.
+ * https://github.com/motdotla/dotenv
+ */
+// import dotenv from 'dotenv';
+// import path from 'path';
+// dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+/**
+ * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
-
-  /* Las pruebas no corren en paralelo: comparten usuarios y datos reales. */
+  testDir: './e2e',
+  globalSetup: './e2e/global-setup.mjs',
   fullyParallel: false,
-  workers: 1,
-
-  /* Falla si alguien dejó un test.only olvidado en el código. */
+  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-
-  /* Sin reintentos: si falla, queremos ver el fallo real. */
-  retries: 0,
-
-  /* Tiempo máximo por prueba. */
-  timeout: 60_000,
-
-  expect: {
-    timeout: 10_000,
-  },
-
-  reporter: [
-    ['list'],
-    ['html', { open: 'never' }],
-  ],
-
+  /* Retry on CI only */
+  retries: process.env.CI ? 2 : 0,
+  /* Opt out of parallel tests on CI. */
+  workers: process.env.CI ? 1 : undefined,
+  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  reporter: 'html',
+  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://127.0.0.1:5173',
 
-    /* Guarda la traza cuando una prueba falla por primera vez. */
+    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-
-    /* Capturas y video solo si algo sale mal. */
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
   },
 
+  /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
+
+    /* Test against mobile viewports. */
+    // {
+    //   name: 'Mobile Chrome',
+    //   use: { ...devices['Pixel 5'] },
+    // },
+    // {
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 12'] },
+    // },
+
+    /* Test against branded browsers. */
+    // {
+    //   name: 'Microsoft Edge',
+    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    // },
+    // {
+    //   name: 'Google Chrome',
+    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    // },
   ],
 
-  /* Levanta backend y frontend automáticamente antes de correr las pruebas. */
   webServer: [
     {
-      command: 'npm --prefix backend run dev',
-      url: 'http://localhost:4000/',
+      command: 'node server.js',
+      cwd: 'backend',
+      url: 'http://127.0.0.1:4000',
       reuseExistingServer: true,
       timeout: 120_000,
     },
     {
-      command: 'npm --prefix frontend run dev',
-      url: 'http://localhost:5173/',
+      command: 'node node_modules/vite/bin/vite.js --host 127.0.0.1',
+      cwd: 'frontend',
+      url: 'http://127.0.0.1:5173',
       reuseExistingServer: true,
       timeout: 120_000,
     },

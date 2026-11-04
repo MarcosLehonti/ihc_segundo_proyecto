@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "seed": "npm --prefix backend run seed",
-    "test:e2e": "playwright test",
-    "test:e2e:report": "playwright show-report"
+    "install:e2e:browser": "node e2e/run-playwright.mjs install chromium",
+    "test:e2e": "node e2e/run-playwright.mjs test",
+    "test:e2e:headed": "node e2e/run-playwright.mjs test --headed"
   },
   "keywords": [],
   "author": "",
