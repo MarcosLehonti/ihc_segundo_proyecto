@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Dashboard.css';
 
 interface User {
     id: number;
@@ -439,54 +440,64 @@ function Dashboard() {
     };
 
     if (cargando) {
-        return <div>Cargando dashboard...</div>;
+        return <div className="dashboard">Cargando dashboard...</div>;
     }
 
     return (
-        <div>
-            <h1>Dashboard</h1>
-
-            {user && (
+        <div className="dashboard">
+            <header className="dashboard-header">
                 <div>
-                    <p>Bienvenido, {user.name}</p>
-                    <p>Correo: {user.email}</p>
-                    <p>Rol: {user.role}</p>
+                    <h1>Dashboard</h1>
+                    {user && (
+                        <p className="dashboard-user">
+                            {user.name} · {user.email}
+                        </p>
+                    )}
                 </div>
-            )}
+                <button className="dashboard-logout" onClick={handleLogout}>
+                    Cerrar sesión
+                </button>
+            </header>
 
-            <hr />
-
-            <section>
-                <h2>Presupuesto mensual</h2>
-                <p>Período: {mes}/{anio}</p>
+            {/* Tarjeta #1: presupuesto mensual al tope. El feedback dijo
+                que el monto del presupuesto no se encontraba; aquí lo
+                mostramos como KPI de resumen en el primer bloque. */}
+            <section className="card" aria-labelledby="titulo-mensual">
+                <h2 id="titulo-mensual">Presupuesto mensual</h2>
+                <p className="card-periodo">Período: {mes}/{anio}</p>
 
                 {resumen ? (
-                    <div>
-                        <p>
-                            Límite mensual: Bs{' '}
-                            {Number(resumen.presupuesto.limite).toFixed(2)}
-                        </p>
-                        <p>
-                            Total gastado: Bs{' '}
-                            {Number(resumen.gastado).toFixed(2)}
-                        </p>
-                        <p>
-                            Saldo disponible: Bs{' '}
-                            {Number(resumen.disponible).toFixed(2)}
-                        </p>
+                    <div className="resumen-grid">
+                        <div className="resumen-item">
+                            <span className="resumen-item-etiqueta">Límite</span>
+                            <span className="resumen-item-valor">
+                                Bs {Number(resumen.presupuesto.limite).toFixed(2)}
+                            </span>
+                        </div>
+                        <div className="resumen-item">
+                            <span className="resumen-item-etiqueta">Gastado</span>
+                            <span className="resumen-item-valor">
+                                Bs {Number(resumen.gastado).toFixed(2)}
+                            </span>
+                        </div>
+                        <div className="resumen-item">
+                            <span className="resumen-item-etiqueta">Disponible</span>
+                            <span className="resumen-item-valor">
+                                Bs {Number(resumen.disponible).toFixed(2)}
+                            </span>
+                        </div>
                     </div>
                 ) : (
                     <p>No has establecido un presupuesto para este mes.</p>
                 )}
 
-                <form onSubmit={handleGuardarPresupuesto}>
-                    <div>
+                <form onSubmit={handleGuardarPresupuesto} className="form-row">
+                    <div className="form-field">
                         <label htmlFor="limite">
                             {resumen
                                 ? 'Actualizar límite mensual (Bs)'
                                 : 'Establecer límite mensual (Bs)'}
                         </label>
-
                         <input
                             id="limite"
                             type="number"
@@ -497,23 +508,23 @@ function Dashboard() {
                             required
                         />
                     </div>
-
-                    <button type="submit">
+                    <button type="submit" className="btn">
                         Guardar presupuesto
                     </button>
                 </form>
 
-                {mensaje && <p role="status">{mensaje}</p>}
-                {error && <p role="alert">{error}</p>}
+                {mensaje && <p role="status" className="msg-ok">{mensaje}</p>}
+                {error && <p role="alert" className="msg-err">{error}</p>}
             </section>
 
-            <hr />
+            {/* Tarjeta #2: presupuesto por categoría con semáforo.
+                Era la crítica más fuerte del feedback (información
+                escondida). Pasa a segundo plano, no al final. */}
+            <section className="card" aria-labelledby="titulo-categorias">
+                <h2 id="titulo-categorias">Presupuesto por categoría</h2>
+                <p className="card-periodo">Período: {mes}/{anio}</p>
 
-            <section>
-                <h2>Presupuesto por categoría</h2>
-                <p>Período: {mes}/{anio}</p>
-
-                <table>
+                <table className="tabla-categorias">
                     <thead>
                         <tr>
                             <th>Categoría</th>
@@ -522,7 +533,6 @@ function Dashboard() {
                             <th>Restante</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         {CATEGORIAS.map((opcion) => {
                             const item = categorias.find(
@@ -533,12 +543,10 @@ function Dashboard() {
                                 item && item.limite !== null
                                     ? `Bs ${Number(item.limite).toFixed(2)}`
                                     : '—';
-
                             const restanteCategoria =
                                 item && item.restante !== null
                                     ? `Bs ${Number(item.restante).toFixed(2)}`
                                     : '—';
-
                             const consumidoCategoria = `Bs ${Number(
                                 item ? item.consumido : 0
                             ).toFixed(2)}`;
@@ -555,10 +563,12 @@ function Dashboard() {
                     </tbody>
                 </table>
 
-                <form onSubmit={handleGuardarPresupuestoCategoria}>
-                    <div>
+                <form
+                    onSubmit={handleGuardarPresupuestoCategoria}
+                    className="form-row"
+                >
+                    <div className="form-field">
                         <label htmlFor="categoria-presupuesto">Categoría</label>
-
                         <select
                             id="categoria-presupuesto"
                             value={categoriaSeleccionada}
@@ -574,39 +584,51 @@ function Dashboard() {
                         </select>
                     </div>
 
-                    <div>
+                    <div className="form-field">
                         <label htmlFor="limite-categoria">
                             Límite de la categoría (Bs)
                         </label>
-
                         <input
                             id="limite-categoria"
                             type="number"
                             min="0.01"
                             step="0.01"
                             value={limiteCategoria}
-                            onChange={(event) => setLimiteCategoria(event.target.value)}
+                            onChange={(event) =>
+                                setLimiteCategoria(event.target.value)
+                            }
                             required
                         />
                     </div>
 
-                    <button type="submit">Guardar</button>
+                    <button type="submit" className="btn">Guardar</button>
                 </form>
 
-                {mensajeCategoria && <p role="status">{mensajeCategoria}</p>}
-                {errorCategoria && <p role="alert">{errorCategoria}</p>}
+                {mensajeCategoria && (
+                    <p role="status" className="msg-ok">{mensajeCategoria}</p>
+                )}
+                {errorCategoria && (
+                    <p role="alert" className="msg-err">{errorCategoria}</p>
+                )}
             </section>
 
-            <hr />
-
-            <section id="gastos-recurrentes">
-                <h2>Gastos recurrentes</h2>
-                <p>Programa gastos semanales o mensuales y revisa su próxima ocurrencia.</p>
+            {/* Tarjeta #3: gastos recurrentes queda al final por ser
+                la operación menos frecuente. La lista tiene scroll
+                interno para no estirar la página. */}
+            <section className="card" id="gastos-recurrentes" aria-labelledby="titulo-recurrentes">
+                <h2 id="titulo-recurrentes">Gastos recurrentes</h2>
+                <p className="card-periodo">
+                    Programa gastos semanales o mensuales y revisa su próxima
+                    ocurrencia.
+                </p>
 
                 {gastosRecurrentes.length === 0 ? (
-                    <p role="status">No tienes gastos recurrentes. Puedes crear uno con el formulario.</p>
+                    <p role="status">
+                        No tienes gastos recurrentes. Puedes crear uno con el
+                        formulario.
+                    </p>
                 ) : (
-                    <ul>
+                    <ul className="lista-recurrentes">
                         {gastosRecurrentes.map((recurrente) => (
                             <li key={recurrente.id}>
                                 <strong>{recurrente.motivo}</strong>
@@ -616,17 +638,29 @@ function Dashboard() {
                                 <p>
                                     Próxima ocurrencia:{' '}
                                     <time dateTime={recurrente.proximaFecha}>
-                                        {new Date(`${recurrente.proximaFecha}T12:00:00`).toLocaleDateString()}
+                                        {new Date(
+                                            `${recurrente.proximaFecha}T12:00:00`
+                                        ).toLocaleDateString()}
                                     </time>
                                 </p>
-                                <p>Estado: {recurrente.activa ? 'Activa' : 'Inactiva'}</p>
+                                <p>
+                                    Estado:{' '}
+                                    {recurrente.activa ? 'Activa' : 'Inactiva'}
+                                </p>
                                 {recurrente.ultimoError && (
-                                    <p role="alert">{recurrente.ultimoError}</p>
+                                    <p role="alert" className="msg-err">
+                                        {recurrente.ultimoError}
+                                    </p>
                                 )}
                                 {recurrente.activa && (
                                     <button
                                         type="button"
-                                        onClick={() => handleDesactivarGastoRecurrente(recurrente.id)}
+                                        className="btn btn-secondary"
+                                        onClick={() =>
+                                            handleDesactivarGastoRecurrente(
+                                                recurrente.id
+                                            )
+                                        }
                                     >
                                         Desactivar recurrencia
                                     </button>
@@ -636,36 +670,47 @@ function Dashboard() {
                     </ul>
                 )}
 
-                <form onSubmit={handleGuardarGastoRecurrente}>
-                    <div>
-                        <label htmlFor="monto-recurrente">Monto recurrente (Bs)</label>
+                <form
+                    onSubmit={handleGuardarGastoRecurrente}
+                    className="form-row"
+                >
+                    <div className="form-field">
+                        <label htmlFor="monto-recurrente">
+                            Monto recurrente (Bs)
+                        </label>
                         <input
                             id="monto-recurrente"
                             type="number"
                             min="0.01"
                             step="0.01"
                             value={montoRecurrente}
-                            onChange={(event) => setMontoRecurrente(event.target.value)}
+                            onChange={(event) =>
+                                setMontoRecurrente(event.target.value)
+                            }
                             required
                         />
                     </div>
-                    <div>
+                    <div className="form-field">
                         <label htmlFor="motivo-recurrente">Motivo</label>
                         <input
                             id="motivo-recurrente"
                             type="text"
                             maxLength={255}
                             value={motivoRecurrente}
-                            onChange={(event) => setMotivoRecurrente(event.target.value)}
+                            onChange={(event) =>
+                                setMotivoRecurrente(event.target.value)
+                            }
                             required
                         />
                     </div>
-                    <div>
+                    <div className="form-field">
                         <label htmlFor="categoria-recurrente">Categoría</label>
                         <select
                             id="categoria-recurrente"
                             value={categoriaRecurrente}
-                            onChange={(event) => setCategoriaRecurrente(event.target.value)}
+                            onChange={(event) =>
+                                setCategoriaRecurrente(event.target.value)
+                            }
                         >
                             {CATEGORIAS.map((opcion) => (
                                 <option key={opcion.valor} value={opcion.valor}>
@@ -674,40 +719,48 @@ function Dashboard() {
                             ))}
                         </select>
                     </div>
-                    <div>
+                    <div className="form-field">
                         <label htmlFor="frecuencia-recurrente">Frecuencia</label>
                         <select
                             id="frecuencia-recurrente"
                             value={frecuenciaRecurrente}
-                            onChange={(event) => setFrecuenciaRecurrente(event.target.value as 'semanal' | 'mensual')}
+                            onChange={(event) =>
+                                setFrecuenciaRecurrente(
+                                    event.target.value as 'semanal' | 'mensual'
+                                )
+                            }
                         >
                             <option value="semanal">Semanal</option>
                             <option value="mensual">Mensual</option>
                         </select>
                     </div>
-                    <div>
-                        <label htmlFor="fecha-inicio-recurrente">Primera ocurrencia</label>
+                    <div className="form-field">
+                        <label htmlFor="fecha-inicio-recurrente">
+                            Primera ocurrencia
+                        </label>
                         <input
                             id="fecha-inicio-recurrente"
                             type="date"
                             min={fechaLocalInput()}
                             value={fechaInicioRecurrente}
-                            onChange={(event) => setFechaInicioRecurrente(event.target.value)}
+                            onChange={(event) =>
+                                setFechaInicioRecurrente(event.target.value)
+                            }
                             required
                         />
                     </div>
-                    <button type="submit">Guardar gasto recurrente</button>
+                    <button type="submit" className="btn">
+                        Guardar gasto recurrente
+                    </button>
                 </form>
 
-                {mensajeRecurrente && <p role="status">{mensajeRecurrente}</p>}
-                {errorRecurrente && <p role="alert">{errorRecurrente}</p>}
+                {mensajeRecurrente && (
+                    <p role="status" className="msg-ok">{mensajeRecurrente}</p>
+                )}
+                {errorRecurrente && (
+                    <p role="alert" className="msg-err">{errorRecurrente}</p>
+                )}
             </section>
-
-            <hr />
-
-            <button onClick={handleLogout}>
-                Cerrar sesión
-            </button>
         </div>
     );
 }
