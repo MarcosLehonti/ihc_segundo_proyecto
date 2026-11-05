@@ -4,6 +4,37 @@ const { Op } = require('sequelize');
 
 const CATEGORIAS_VALIDAS = ['otros', 'comida', 'transporte', 'estudio'];
 
+// Umbral de alerta: desde 80% del limite se avisa al usuario que
+// esta cerca del tope, segun el requisito de la tarea.
+const UMBRAL_ALERTA = 80;
+
+// Deriva el estado del presupuesto por categoria a partir del
+// consumo y el limite. Estados:
+//   'sin-limite' -> el usuario aun no establecio un limite,
+//   'ok'         -> consumo por debajo del 80%,
+//   'alerta'     -> consumo entre 80% y 100% inclusive,
+//   'excedido'   -> consumo por encima del 100%.
+// Se devuelve tambien el porcentaje (0-∞) para que el frontend
+// dibuje la barra de progreso sin tener que recalcularlo.
+function calcularEstado(limite, consumido) {
+    if (limite === null || Number(limite) <= 0) {
+        return { estado: 'sin-limite', porcentaje: 0 };
+    }
+
+    const porcentaje = Math.round((Number(consumido) / Number(limite)) * 100);
+
+    let estado;
+    if (porcentaje > 100) {
+        estado = 'excedido';
+    } else if (porcentaje >= UMBRAL_ALERTA) {
+        estado = 'alerta';
+    } else {
+        estado = 'ok';
+    }
+
+    return { estado, porcentaje };
+}
+
 function calcularRangoDelMes(mes, anio) {
     return {
         inicioMes: new Date(anio, mes - 1, 1),
@@ -158,23 +189,36 @@ async function obtenerPresupuestoCategoria(req, res) {
             const consumidoRedondeado = Number(consumido.toFixed(2));
 
             if (!presupuesto) {
+                const { estado, porcentaje } = calcularEstado(
+                    null,
+                    consumidoRedondeado
+                );
+
                 categorias.push({
                     categoria,
                     limite: null,
                     consumido: consumidoRedondeado,
-                    restante: null
+                    restante: null,
+                    estado,
+                    porcentaje
                 });
 
                 continue;
             }
 
             const limite = Number(presupuesto.limite);
+            const { estado, porcentaje } = calcularEstado(
+                limite,
+                consumidoRedondeado
+            );
 
             categorias.push({
                 categoria,
                 limite,
                 consumido: consumidoRedondeado,
-                restante: Number((limite - consumido).toFixed(2))
+                restante: Number((limite - consumido).toFixed(2)),
+                estado,
+                porcentaje
             });
         }
 
@@ -193,6 +237,7 @@ async function obtenerPresupuestoCategoria(req, res) {
 
 module.exports = {
     CATEGORIAS_VALIDAS,
+    calcularEstado,
     establecerPresupuestoCategoria,
     obtenerPresupuestoCategoria
 };
