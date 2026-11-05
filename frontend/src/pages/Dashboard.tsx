@@ -23,11 +23,18 @@ interface ResumenPresupuesto {
     disponible: number;
 }
 
+// Estado del presupuesto por categoria devuelto por el backend.
+// 'ok' (<80%), 'alerta' (80-100%), 'excedido' (>100%) o 'sin-limite'
+// cuando aun no se fijo un limite para la categoria.
+type EstadoCategoria = 'ok' | 'alerta' | 'excedido' | 'sin-limite';
+
 interface PresupuestoCategoriaItem {
     categoria: string;
     limite: number | null;
     consumido: number;
     restante: number | null;
+    estado?: EstadoCategoria;
+    porcentaje?: number;
 }
 
 interface GastoRecurrente {
@@ -55,6 +62,43 @@ const CATEGORIAS = [
     { valor: 'transporte', etiqueta: 'Transporte' },
     { valor: 'estudio', etiqueta: 'Estudio' }
 ];
+
+// Calcula el estado y porcentaje localmente cuando el backend no
+// los entrega (fallback para entornos con API vieja). Repite la
+// logica del controlador: alerta desde 80%, excedido >100%.
+function derivarEstadoCategoria(item: PresupuestoCategoriaItem): {
+    estado: EstadoCategoria;
+    porcentaje: number;
+} {
+    if (item.estado && item.porcentaje !== undefined) {
+        return { estado: item.estado, porcentaje: item.porcentaje };
+    }
+    if (item.limite === null || Number(item.limite) <= 0) {
+        return { estado: 'sin-limite', porcentaje: 0 };
+    }
+    const porcentaje = Math.round(
+        (Number(item.consumido) / Number(item.limite)) * 100
+    );
+    let estado: EstadoCategoria = 'ok';
+    if (porcentaje > 100) estado = 'excedido';
+    else if (porcentaje >= 80) estado = 'alerta';
+    return { estado, porcentaje };
+}
+
+// Etiqueta en espanol para cada estado, usada en el badge visible
+// al usuario. Debe coincidir con los textos del requisito.
+function etiquetaEstadoCategoria(estado: EstadoCategoria): string {
+    switch (estado) {
+        case 'ok':
+            return 'Dentro del límite';
+        case 'alerta':
+            return 'Desde 80%';
+        case 'excedido':
+            return 'Excedido';
+        default:
+            return 'Sin límite';
+    }
+}
 
 function Dashboard() {
     const [user, setUser] = useState<User | null>(null);
@@ -528,35 +572,67 @@ function Dashboard() {
                     <thead>
                         <tr>
                             <th>Categoría</th>
-                            <th>Límite</th>
-                            <th>Consumido</th>
+                            <th>Estado</th>
+                            <th>Consumo</th>
+                            <th style={{ minWidth: 160 }}>Avance</th>
                             <th>Restante</th>
                         </tr>
                     </thead>
                     <tbody>
                         {CATEGORIAS.map((opcion) => {
-                            const item = categorias.find(
-                                (fila) => fila.categoria === opcion.valor
-                            );
+                            const item =
+                                categorias.find(
+                                    (fila) => fila.categoria === opcion.valor
+                                ) ?? {
+                                    categoria: opcion.valor,
+                                    limite: null,
+                                    consumido: 0,
+                                    restante: null
+                                };
 
-                            const limiteCategoriaActual =
-                                item && item.limite !== null
+                            const { estado, porcentaje } =
+                                derivarEstadoCategoria(item);
+
+                            const limiteTxt =
+                                item.limite !== null
                                     ? `Bs ${Number(item.limite).toFixed(2)}`
                                     : '—';
-                            const restanteCategoria =
-                                item && item.restante !== null
+                            const restanteTxt =
+                                item.restante !== null
                                     ? `Bs ${Number(item.restante).toFixed(2)}`
                                     : '—';
-                            const consumidoCategoria = `Bs ${Number(
-                                item ? item.consumido : 0
-                            ).toFixed(2)}`;
+                            const consumidoTxt = `Bs ${Number(
+                                item.consumido
+                            ).toFixed(2)} / ${limiteTxt}`;
+                            const anchoBarra = Math.min(porcentaje, 100);
 
                             return (
                                 <tr key={opcion.valor}>
                                     <td>{opcion.etiqueta}</td>
-                                    <td>{limiteCategoriaActual}</td>
-                                    <td>{consumidoCategoria}</td>
-                                    <td>{restanteCategoria}</td>
+                                    <td>
+                                        <span
+                                            className={`badge-estado estado-${estado}`}
+                                        >
+                                            {etiquetaEstadoCategoria(estado)}
+                                        </span>
+                                    </td>
+                                    <td>{consumidoTxt}</td>
+                                    <td>
+                                        <div
+                                            className={`progreso estado-${estado}`}
+                                            role="progressbar"
+                                            aria-valuenow={porcentaje}
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                            aria-label={`Avance ${opcion.etiqueta} ${porcentaje}%`}
+                                        >
+                                            <div
+                                                className="progreso-barra"
+                                                style={{ width: `${anchoBarra}%` }}
+                                            />
+                                        </div>
+                                    </td>
+                                    <td>{restanteTxt}</td>
                                 </tr>
                             );
                         })}
