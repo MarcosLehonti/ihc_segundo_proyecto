@@ -62,4 +62,4 @@ Pasos automatizados:
 
 ## Enlace al commit
 
-(se agrega después del commit — por ahora pendiente de aprobación del grupo)
+https://github.com/ary10220/ihc_segundo_proyecto/commit/5e74901
