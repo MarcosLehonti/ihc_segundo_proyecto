@@ -415,6 +415,47 @@ function Gastos() {
                     >
                         Este mes
                     </button>
+                    {/* Clase 20 - Arquitectura de informacion: subir el filtro de estado al primer nivel */}
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', marginLeft: '8px' }}>| Estado:</span>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroEstado('')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: !filtroEstado ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Todos los estados
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroEstado(filtroEstado === 'pendiente' ? '' : 'pendiente')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: filtroEstado === 'pendiente' ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Pendientes
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroEstado(filtroEstado === 'pagado' ? '' : 'pagado')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            backgroundColor: filtroEstado === 'pagado' ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Pagados
+                    </button>
                     <button
                         type="button"
                         onClick={() => setMostrarMasFiltros(!mostrarMasFiltros)}
