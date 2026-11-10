@@ -256,7 +256,7 @@ function Campo({ etiqueta, children }: { etiqueta: string; children: React.React
 
 function Dato({ titulo, valor, testId, destacado }: { titulo: string; valor?: number; testId: string; destacado?: boolean }) {
     return (
-        <div style={{ padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: destacado ? '#e8f1fb' : undefined }}>
+        <div style={{ padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: destacado ? '#e8f1fb' : undefined, color: destacado ? '#0b2e59' : undefined }}>
             <div style={{ fontSize: 13 }}>{titulo}</div>
             <div data-testid={testId} style={{ fontSize: 22, fontWeight: 700 }}>{valor === undefined ? '…' : bs(valor)}</div>
         </div>

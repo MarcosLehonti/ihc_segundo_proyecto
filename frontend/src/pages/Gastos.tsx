@@ -268,7 +268,7 @@ function Gastos() {
                 <h1>{gastoEditando === null ? 'Ingresar Gastos' : `Editando Gasto #${gastoEditando}`}</h1>
 
             {gastoEditando !== null && (
-                <div style={{ backgroundColor: '#e7f3fe', borderLeft: '4px solid #2196F3', padding: '10px 14px', marginBottom: '14px', borderRadius: '4px' }}>
+                <div style={{ backgroundColor: '#e7f3fe', color: '#1f2328', borderLeft: '4px solid #2196F3', padding: '10px 14px', marginBottom: '14px', borderRadius: '4px' }}>
                     <p style={{ margin: 0, fontWeight: 'bold', color: '#0d47a1' }}>
                         Modo edición activo: Gasto #{gastoEditando} ({motivo || 'sin motivo'})
                     </p>
@@ -369,6 +369,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: (!filtroTipo && !filtroPeriodo) ? '#d0d7de' : '#f6f8fa',
                             border: '1px solid #d0d7de',
                             borderRadius: '6px'
@@ -382,6 +383,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroTipo === 'gasto' ? '#cfe2ff' : '#f6f8fa',
                             border: '1px solid #b6d4fe',
                             borderRadius: '6px'
@@ -395,6 +397,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroTipo === 'ingreso' ? '#d1e7dd' : '#f6f8fa',
                             border: '1px solid #a3cfbb',
                             borderRadius: '6px'
@@ -408,6 +411,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroPeriodo === 'este_mes' ? '#fff3cd' : '#f6f8fa',
                             border: '1px solid #ffe69c',
                             borderRadius: '6px'
@@ -423,6 +427,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: !filtroEstado ? '#cfe2ff' : '#f6f8fa',
                             border: '1px solid #b6d4fe',
                             borderRadius: '6px'
@@ -436,6 +441,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroEstado === 'pendiente' ? '#cfe2ff' : '#f6f8fa',
                             border: '1px solid #b6d4fe',
                             borderRadius: '6px'
@@ -449,6 +455,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroEstado === 'pagado' ? '#cfe2ff' : '#f6f8fa',
                             border: '1px solid #b6d4fe',
                             borderRadius: '6px'
@@ -462,6 +469,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: mostrarMasFiltros ? '#e9ecef' : '#ffffff',
                             border: '1px solid #6c757d',
                             borderRadius: '6px',
@@ -474,7 +482,7 @@ function Gastos() {
 
                 {/* Divulgacion progresiva: solo se muestran los 4 desplegables si el usuario los solicita */}
                 {mostrarMasFiltros && (
-                    <div style={{ padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px solid #e9ecef', marginBottom: '10px' }}>
+                    <div style={{ padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px solid #e9ecef', color: '#1f2328', marginBottom: '10px' }}>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '3px' }}>Tipo:</label>
