@@ -55,6 +55,9 @@ function Navbar() {
                 <NavLink to="/historial" style={linkStyle}>
                     Historial
                 </NavLink>
+                <NavLink to="/metas" style={linkStyle}>
+                    Metas
+                </NavLink>
             </nav>
 
             <div>

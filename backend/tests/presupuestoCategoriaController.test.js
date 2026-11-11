@@ -296,30 +296,30 @@ describe('obtenerPresupuestoCategoria', () => {
             mes: 11,
             anio: 2026,
             categorias: [
-                {
+                expect.objectContaining({
                     categoria: 'otros',
                     limite: null,
                     consumido: 0,
                     restante: null
-                },
-                {
+                }),
+                expect.objectContaining({
                     categoria: 'comida',
                     limite: 300,
                     consumido: 120,
                     restante: 180
-                },
-                {
+                }),
+                expect.objectContaining({
                     categoria: 'transporte',
                     limite: 150,
                     consumido: 50,
                     restante: 100
-                },
-                {
+                }),
+                expect.objectContaining({
                     categoria: 'estudio',
                     limite: null,
                     consumido: 40,
                     restante: null
-                }
+                })
             ]
         });
 

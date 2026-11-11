@@ -1,0 +1,326 @@
+/* Estilos del Dashboard de Presupuesto Estudiantil.
+   Pensados para dar jerarquía visual clara y respetar el feedback
+   recibido: la información más importante (presupuesto mensual y
+   límites por categoría) debe quedar arriba, con cards legibles,
+   inputs ergonómicos y tipografía usable. */
+
+.dashboard {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    color: var(--text-h);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dashboard-header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.dashboard-user {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.dashboard-logout {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.dashboard-logout:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Tarjeta base reutilizable. Define el envase visual de cada
+   sección (presupuesto mensual, categorías, recurrentes) para que
+   el usuario perciba bloques discretos en vez de una lista plana. */
+.card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+}
+
+.card h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+}
+
+.card-periodo {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--text);
+}
+
+/* Grilla principal de resumen: pone en primer plano el presupuesto
+   mensual y las categorías para resolver el reclamo de ambos
+   revisores (no se encontraba el monto ni los límites). */
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.resumen-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--accent-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.resumen-item-etiqueta {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text);
+}
+
+.resumen-item-valor {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-h);
+}
+
+/* Formularios: inputs con tamaño y padding ergonómicos. El feedback
+   señaló que los inputs eran diminutos y sin padding; aquí los
+   normalizamos para que sean cómodos de usar. */
+.form-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 180px;
+    min-width: 160px;
+}
+
+.form-field label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-h);
+}
+
+.form-field input,
+.form-field select {
+    height: 42px;
+    padding: 0 12px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+}
+
+.btn {
+    height: 42px;
+    padding: 0 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+}
+
+.msg-ok {
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    color: #166534;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.msg-err {
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* Tabla de categorías con estilo claro para que el usuario pueda
+   escanear rápido los límites. Replaced la tabla pelada por una
+   versión con filas separadas y encabezado tenue. */
+.tabla-categorias {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+.tabla-categorias th,
+.tabla-categorias td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tabla-categorias th {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text);
+    letter-spacing: 0.3px;
+    background: var(--code-bg);
+}
+
+.tabla-categorias tr:last-child td {
+    border-bottom: none;
+}
+
+/* Barra de progreso con semáforo. Se usa en la tarea 2 para
+   representar el estado del presupuesto por categoría
+   (dentro del límite / desde 80% / excedido). */
+.progreso {
+    width: 100%;
+    height: 10px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progreso-barra {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.estado-ok .progreso-barra {
+    background: #22c55e;
+}
+
+.estado-alerta .progreso-barra {
+    background: #f59e0b;
+}
+
+.estado-excedido .progreso-barra {
+    background: #ef4444;
+}
+
+.estado-sin-limite .progreso-barra {
+    background: var(--text);
+    opacity: 0.4;
+}
+
+.badge-estado {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-estado.estado-ok {
+    background: rgba(34, 197, 94, 0.15);
+    color: #166534;
+}
+
+.badge-estado.estado-alerta {
+    background: rgba(245, 158, 11, 0.18);
+    color: #854d0e;
+}
+
+.badge-estado.estado-excedido {
+    background: rgba(239, 68, 68, 0.15);
+    color: #991b1b;
+}
+
+.badge-estado.estado-sin-limite {
+    background: var(--code-bg);
+    color: var(--text);
+}
+
+/* Lista de gastos recurrentes: separamos cada ítem en una card
+   interna con scroll opcional si la lista crece. */
+.lista-recurrentes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.lista-recurrentes li {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lista-recurrentes strong {
+    font-size: 15px;
+    color: var(--text-h);
+}
+
+.lista-recurrentes p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text);
+}
+
+@media (max-width: 720px) {
+    .resumen-grid {
+        grid-template-columns: 1fr;
+    }
+    .dashboard {
+        padding: 16px 12px 32px;
+    }
+}
