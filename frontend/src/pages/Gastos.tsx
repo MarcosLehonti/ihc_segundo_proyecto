@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { track } from '../utils/analitica';
 
 interface Gasto {
     id: number;
@@ -96,6 +97,9 @@ function Gastos() {
 
         setMensajeError('');
 
+        // Clase 21 - Analitica: el usuario inicia el flujo de registrar un movimiento.
+        track('movimiento_iniciado', { tipo, categoria });
+
         try {
 
             const response = await fetch(
@@ -118,6 +122,9 @@ function Gastos() {
             const data = await response.json();
 
             if (response.ok) {
+
+                // Clase 21 - Analitica: solo llegamos aqui si el movimiento se guardo.
+                track('movimiento_guardado', { tipo, categoria });
 
                 setMensajeExito('Gasto registrado correctamente.');
                 setTimeout(() => setMensajeExito(''), 3000);
