@@ -1,53 +1,63 @@
 // Clase 21 - Analitica de interaccion.
-// Envia un evento del flujo principal a nuestro backend (panel propio, obligatorio)
-// y, si esta configurado, tambien a Google Analytics 4 (extra).
-// Nunca mandar: motivo, nombre del usuario, descripcion libre, monto exacto.
-// Props permitidas: tipo, categoria.
+// Los eventos se guardan en el navegador (localStorage), NO en una API.
+// Props permitidas: tipo, categoria, mes, supera_limite.
+// Nunca se guarda informacion personal: nombre del usuario, motivo, monto exacto.
 
-const API = 'http://localhost:4000/api/analitica';
+const CLAVE = 'eventos';
 
 export type PropsEvento = {
     tipo?: string;
     categoria?: string;
+    mes?: string;
+    supera_limite?: boolean;
 };
 
-// Google Analytics 4: gtag se inicializa en index.html.
-// Si el bloque no se cargo (bloqueador, modo offline), gtag queda undefined y se omite.
-declare global {
-    interface Window {
-        gtag?: (...args: unknown[]) => void;
+export interface RegistroEvento {
+    evento: string;
+    props: PropsEvento;
+    fecha: string;
+}
+
+// Lista en memoria + persistencia en localStorage.
+export const eventos: RegistroEvento[] = cargarDesdeAlmacenamiento();
+
+function cargarDesdeAlmacenamiento(): RegistroEvento[] {
+    try {
+        const crudo = localStorage.getItem(CLAVE);
+        if (!crudo) return [];
+        const parseado = JSON.parse(crudo);
+        return Array.isArray(parseado) ? parseado : [];
+    } catch {
+        return [];
     }
 }
 
-export async function track(evento: string, props: PropsEvento = {}) {
-    const registro = {
+function guardarEvento(registro: RegistroEvento) {
+    eventos.push(registro);
+    try {
+        localStorage.setItem(CLAVE, JSON.stringify(eventos));
+    } catch {
+        // si el storage esta lleno o bloqueado, no romper la UI
+    }
+}
+
+// La funcion de siete lineas (slide):
+export function track(evento: string, props: PropsEvento) {
+    const registro: RegistroEvento = {
         evento,
         props,
         fecha: new Date().toISOString()
     };
-
+    guardarEvento(registro);
     console.log('[evento]', registro);
+}
 
-    // 1) Panel propio (obligatorio): nuestra tabla eventos.
-    try {
-        await fetch(`${API}/evento`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                evento: registro.evento,
-                props: registro.props
-            })
-        });
-    } catch (error) {
-        console.log('[evento] no se pudo enviar al panel propio', error);
-    }
+// Utilidades para el panel /analitica y los tests:
+export function obtenerEventos(): RegistroEvento[] {
+    return [...eventos];
+}
 
-    // 2) Google Analytics 4 (extra): mismo evento, mismas props.
-    try {
-        if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
-            window.gtag('event', registro.evento, registro.props);
-        }
-    } catch (error) {
-        console.log('[evento] no se pudo enviar a GA', error);
-    }
+export function limpiarEventos() {
+    eventos.length = 0;
+    try { localStorage.removeItem(CLAVE); } catch { /* noop */ }
 }
