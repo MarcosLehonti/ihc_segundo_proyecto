@@ -1,5 +1,14 @@
-import { useEffect, useState } from 'react';
-import { track } from '../utils/analitica';
+import { useEffect, useRef, useState } from 'react';
+import { track, type Motivo } from '../utils/analitica';
+
+// Traduce el error del backend a un motivo de la lista fija (sin guardar el texto).
+function motivoDesdeError(error: string | undefined): Motivo {
+    const texto = (error || '').toLowerCase();
+    if (texto.includes('no tienes un presupuesto') || texto.includes('no existe un presupuesto')) return 'sin_presupuesto';
+    if (texto.includes('supera')) return 'supera_presupuesto';
+    if (texto.includes('monto positivo')) return 'campos_vacios';
+    return 'error_servidor';
+}
 
 interface Gasto {
     id: number;
@@ -44,6 +53,9 @@ function Gastos() {
     // Tarea 9: aviso antes de superar el limite de la categoria.
     const [avisoLimite, setAvisoLimite] = useState<AvisoLimite | null>(null);
 
+    // Tarea 9 - Analitica: no repetir busqueda_sin_resultados por cada tecla.
+    const ultimaBusquedaVacia = useRef('');
+
     const token = localStorage.getItem('token');
 
     const obtenerGastos = async () => {
@@ -80,6 +92,23 @@ function Gastos() {
             if (response.ok) {
                 setGastos(data.movimientos || []);
                 setTotalFiltrado(Number(data.total) || 0);
+
+                // Tarea 9 - Analitica: busqueda o filtro sin resultados.
+                // Solo se guarda QUE filtros estaban activos, nunca el texto buscado.
+                const filtros = [
+                    buscar.trim() && 'texto',
+                    filtroTipo && 'tipo',
+                    filtroCategoria && 'categoria',
+                    filtroEstado && 'estado',
+                    filtroPeriodo && 'periodo'
+                ].filter(Boolean).join(',');
+                const sinResultados = (data.movimientos || []).length === 0;
+                if (filtros && sinResultados && ultimaBusquedaVacia.current !== filtros) {
+                    track('busqueda_sin_resultados', { filtros });
+                    ultimaBusquedaVacia.current = filtros;
+                } else if (!sinResultados) {
+                    ultimaBusquedaVacia.current = '';
+                }
             } else {
                 console.log(data.error);
             }
@@ -95,22 +124,25 @@ function Gastos() {
 
     const handleRegitrarGasto = async (confirmarExceso = false) => {
 
+        // Clase 21 - Analitica: el usuario inicia el flujo de registrar un movimiento.
+        // Al confirmar el aviso no se cuenta un segundo inicio.
+        if (!confirmarExceso) track('movimiento_iniciado', { tipo, categoria });
+
         if (!monto || !motivo.trim()) {
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'campos_vacios' });
             setMensajeError('Todos los campos son obligatorios.');
             setTimeout(() => setMensajeError(''), 3000);
             return;
         }
 
         if (/^\d+$/.test(motivo.trim())) {
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'motivo_numerico' });
             setMensajeError('El motivo debe contener una descripción válida en texto, no solo números.');
             setTimeout(() => setMensajeError(''), 4000);
             return;
         }
 
         setMensajeError('');
-
-        // Clase 21 - Analitica: el usuario inicia el flujo de registrar un movimiento.
-        track('movimiento_iniciado', { tipo, categoria });
 
         try {
 
@@ -135,6 +167,7 @@ function Gastos() {
             const data = await response.json();
 
             if (response.status === 409 && data.requiereConfirmacion) {
+                track('aviso_limite_mostrado', { categoria, accion: 'registrar' });
                 setAvisoLimite({ accion: 'registrar', ...data });
                 return;
             }
@@ -143,8 +176,10 @@ function Gastos() {
 
             if (response.ok) {
 
+                if (confirmarExceso) track('aviso_limite_confirmado', { categoria, accion: 'registrar' });
+
                 // Clase 21 - Analitica: solo llegamos aqui si el movimiento se guardo.
-                track('movimiento_guardado', { tipo, categoria });
+                track('movimiento_guardado', { tipo, categoria, supera_limite: confirmarExceso });
 
                 setMensajeExito('Gasto registrado correctamente.');
                 setTimeout(() => setMensajeExito(''), 3000);
@@ -158,12 +193,14 @@ function Gastos() {
 
             } else {
 
+                track('movimiento_rechazado', { tipo, categoria, motivo: motivoDesdeError(data.error) });
                 console.log(data.error);
                 alert(data.error);
 
             }
 
         } catch (error) {
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'error_servidor' });
             console.error('Error al registrar el gasto:', error);
         }
     };
@@ -265,6 +302,7 @@ function Gastos() {
             const data = await response.json();
 
             if (response.status === 409 && data.requiereConfirmacion) {
+                track('aviso_limite_mostrado', { categoria, accion: 'editar' });
                 setAvisoLimite({ accion: 'editar', ...data });
                 return;
             }
@@ -272,6 +310,8 @@ function Gastos() {
             setAvisoLimite(null);
 
             if (response.ok) {
+
+                if (confirmarExceso) track('aviso_limite_confirmado', { categoria, accion: 'editar' });
 
                 setMensajeExito('Gasto actualizado correctamente.');
                 setTimeout(() => setMensajeExito(''), 3000);
@@ -391,7 +431,14 @@ function Gastos() {
                     >
                         Guardar de todas formas
                     </button>
-                    <button type="button" onClick={() => setAvisoLimite(null)} style={{ marginLeft: '8px' }}>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            track('aviso_limite_cancelado', { categoria: avisoLimite.categoria, accion: avisoLimite.accion });
+                            setAvisoLimite(null);
+                        }}
+                        style={{ marginLeft: '8px' }}
+                    >
                         Cancelar
                     </button>
                 </div>
