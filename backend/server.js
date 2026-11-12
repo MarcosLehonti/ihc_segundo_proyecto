@@ -7,6 +7,7 @@ const PresupuestoCategoria = require('./src/models/PresupuestoCategoria');
 const GastoRecurrente = require('./src/models/GastoRecurrente');
 require('./src/models/Meta');
 require('./src/models/MovimientoMeta');
+const Evento = require('./src/models/Evento');
 const { procesarTodasLasRecurrencias } = require('./src/services/gastoRecurrenteService');
 
 const PORT = 4000;

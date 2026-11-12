@@ -9,6 +9,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import Pagos from './pages/Pagos';
 import Historial from './pages/Historial';
 import Metas from './pages/Metas';
+import Analitica from './pages/Analitica';
 
 function App() {
 
@@ -25,6 +26,9 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Clase 21 - Analitica: panel propio, solo desarrollo, sin login */}
+        <Route path="/analitica" element={<Analitica />} />
 
         <Route element={<ProtectedRoute />}>
 
