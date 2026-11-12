@@ -150,7 +150,8 @@
 .btn {
     height: 42px;
     padding: 0 18px;
-    background: var(--accent);
+    /* Morado oscuro fijo: blanco sobre --accent no llega a 4.5:1 (WCAG AA). */
+    background: #7e22ce;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -161,7 +162,7 @@
 }
 
 .btn:hover {
-    opacity: 0.9;
+    background: #6b21a8;
 }
 
 .btn-secondary {

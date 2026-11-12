@@ -36,7 +36,7 @@ test('registrar un gasto actualiza el presupuesto y pagarlo cambia su estado', a
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
     token = await page.evaluate(() => localStorage.getItem('token'));
 
-    const totalAntes = page.locator('p').filter({ hasText: 'Total gastado:' });
+    const totalAntes = page.locator('.resumen-item').filter({ hasText: 'Gastado' });
     await expect(totalAntes).toBeVisible();
     const textoTotalAntes = await totalAntes.innerText();
     const numeroAntes = textoTotalAntes.match(/Bs\s*([\d.]+)/);
@@ -66,7 +66,7 @@ test('registrar un gasto actualiza el presupuesto y pagarlo cambia su estado', a
     await page.getByRole('link', { name: 'Dashboard' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
     await expect(
-      page.locator('p').filter({ hasText: 'Total gastado:' }),
+      page.locator('.resumen-item').filter({ hasText: 'Gastado' }),
     ).toContainText((totalInicial + montoPrueba).toFixed(2));
 
     await page.getByRole('link', { name: 'Pagos' }).click();
@@ -80,7 +80,7 @@ test('registrar un gasto actualiza el presupuesto y pagarlo cambia su estado', a
 
     await page.getByRole('link', { name: 'Dashboard' }).click();
     await expect(
-      page.locator('p').filter({ hasText: 'Total gastado:' }),
+      page.locator('.resumen-item').filter({ hasText: 'Gastado' }),
     ).toContainText((totalInicial + montoPrueba).toFixed(2));
   } finally {
     // Elimina solo el gasto creado por esta prueba para que se pueda repetir.
@@ -99,8 +99,8 @@ test('rechaza un gasto que supera el saldo y conserva el total', async ({ page }
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
 
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-  const totalGastado = page.locator('p').filter({ hasText: 'Total gastado:' });
-  const saldoDisponible = page.locator('p').filter({ hasText: 'Saldo disponible:' });
+  const totalGastado = page.locator('.resumen-item').filter({ hasText: 'Gastado' });
+  const saldoDisponible = page.locator('.resumen-item').filter({ hasText: 'Disponible' });
   await expect(totalGastado).toBeVisible();
   await expect(saldoDisponible).toBeVisible();
 
@@ -164,7 +164,7 @@ for (const frecuencia of ['semanal', 'mensual'] as const) {
     try {
       await iniciarSesion(page, correo, contrasena);
       token = await page.evaluate(() => localStorage.getItem('token'));
-      const totalGastado = page.locator('p').filter({ hasText: 'Total gastado:' });
+      const totalGastado = page.locator('.resumen-item').filter({ hasText: 'Gastado' });
       const textoTotalInicial = await totalGastado.innerText();
       const totalInicial = Number(textoTotalInicial.match(/Bs\s*([\d.]+)/)?.[1]);
       expect(Number.isFinite(totalInicial)).toBeTruthy();
@@ -208,7 +208,7 @@ for (const frecuencia of ['semanal', 'mensual'] as const) {
       await page.reload();
       const filaPersistida = page.locator('#gastos-recurrentes').getByText(motivo, { exact: true }).locator('xpath=..');
       await expect(filaPersistida).toBeVisible();
-      await expect(page.locator('p').filter({ hasText: 'Total gastado:' }))
+      await expect(page.locator('.resumen-item').filter({ hasText: 'Gastado' }))
         .toContainText((totalInicial + 2.5).toFixed(2));
 
       await page.getByRole('button', { name: 'Cerrar sesión' }).first().click();
@@ -236,7 +236,7 @@ for (const frecuencia of ['semanal', 'mensual'] as const) {
 
 test('rechaza una recurrencia que excede el saldo y muestra cómo corregirla', async ({ page }) => {
   await iniciarSesion(page, correo, contrasena);
-  const saldoDisponible = page.locator('p').filter({ hasText: 'Saldo disponible:' });
+  const saldoDisponible = page.locator('.resumen-item').filter({ hasText: 'Disponible' });
   const textoSaldo = await saldoDisponible.innerText();
   const saldo = Number(textoSaldo.match(/Bs\s*([\d.]+)/)?.[1]);
   expect(Number.isFinite(saldo)).toBeTruthy();

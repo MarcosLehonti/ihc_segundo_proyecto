@@ -120,4 +120,4 @@ pnpm exec playwright show-report
 
 Resultado: backend **44/44**. E2E de la Tarea 9: **7/7** (2 de aviso de límite + 5 de analítica).
 
-Suite E2E completa: 13 pasan y 5 fallan. Las 5 que fallan son de `e2e/presupuesto.spec.ts` y **ya fallaban antes de esta tarea**: buscan los textos «Total gastado:» y «Saldo disponible:», que desaparecieron con el rediseño del Dashboard de la Clase 20. Hay que actualizar esos selectores aparte.
+Suite E2E completa: **18/18**. Al hacer esta tarea arreglamos 5 E2E antiguas de `e2e/presupuesto.spec.ts`, que buscaban los textos «Total gastado:» y «Saldo disponible:» que ya no existen desde el rediseño del Dashboard de la Clase 20. También subimos el contraste del botón principal (`.btn`, de `#aa3bff` a `#7e22ce`), que axe marcaba por debajo de 4.5:1.
