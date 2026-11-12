@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { track } from '../utils/analitica';
 
 function Login() {
 
@@ -14,8 +15,13 @@ function Login() {
 
         if (!email.trim() || !password) {
             setMensajeError('Por favor ingresa tu correo y contraseña.');
+            // Tarea 9 - Analitica: validacion fallida del formulario de login.
+            track('error_validacion', { flujo: 'login', motivo: 'campos_obligatorios' });
             return;
         }
+
+        // Tarea 9 - Analitica: el usuario inicia el flujo de iniciar sesion.
+        track('login_iniciado', { flujo: 'login' });
 
         try {
 
@@ -38,11 +44,15 @@ function Login() {
 
                 console.log('Token guardado correctamente');
 
+                // Tarea 9 - Analitica: login exitoso.
+                track('login_exitoso', { flujo: 'login' });
+
                 navigate('/dashboard');
 
             } else {
 
                 setMensajeError(data.error || 'Credenciales incorrectas. Verifica tus datos.');
+                track('login_fallido', { flujo: 'login', motivo: 'credenciales_invalidas' });
 
             }
 
@@ -50,6 +60,7 @@ function Login() {
 
             console.error('Error al conectar con el servidor:', error);
             setMensajeError('No se pudo conectar con el servidor. Intenta nuevamente.');
+            track('login_fallido', { flujo: 'login', motivo: 'servidor' });
 
         }
 

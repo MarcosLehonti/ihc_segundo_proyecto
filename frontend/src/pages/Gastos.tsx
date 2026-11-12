@@ -66,14 +66,64 @@ function Gastos() {
             const data = await response.json();
 
             if (response.ok) {
-                setGastos(data.movimientos || []);
+                const movimientos = data.movimientos || [];
+                setGastos(movimientos);
                 setTotalFiltrado(Number(data.total) || 0);
+
+                // Tarea 9 - Analitica: registrar busqueda o filtro sin resultados.
+                const hayFiltroActivo = Boolean(
+                    buscar.trim() || filtroTipo || filtroCategoria || filtroEstado || filtroPeriodo
+                );
+                if (hayFiltroActivo && movimientos.length === 0) {
+                    track('filtro_sin_resultado', {
+                        tipo: filtroTipo || undefined,
+                        categoria: filtroCategoria || undefined,
+                        flujo: 'buscar_movimientos'
+                    });
+                }
             } else {
                 console.log(data.error);
             }
 
         } catch (error) {
             console.error('Error al obtener los gastos:', error);
+        }
+    };
+
+    // Tarea 9 - Parte B: calcular el excedente del limite de categoria y mes actuales.
+    // Devuelve el monto que se pasaria del limite, o 0 si no hay exceso ni limite definido.
+    const calcularExcedenteCategoria = async (
+        categoriaConsultada: string,
+        nuevoMonto: number
+    ): Promise<{ excedente: number; limite: number | null; consumido: number }> => {
+        const ahora = new Date();
+        const mes = ahora.getMonth() + 1;
+        const anio = ahora.getFullYear();
+
+        try {
+            const response = await fetch(
+                `http://localhost:4000/api/presupuesto-categoria/obtener?mes=${mes}&anio=${anio}`,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            if (!response.ok) return { excedente: 0, limite: null, consumido: 0 };
+
+            const data = await response.json();
+            const info = (data.categorias || []).find(
+                (c: { categoria: string }) => c.categoria === categoriaConsultada
+            );
+
+            if (!info || info.limite === null || info.limite === undefined) {
+                return { excedente: 0, limite: null, consumido: 0 };
+            }
+
+            const limite = Number(info.limite);
+            const consumido = Number(info.consumido);
+            const proyectado = consumido + nuevoMonto;
+            const excedente = proyectado > limite ? Number((proyectado - limite).toFixed(2)) : 0;
+            return { excedente, limite, consumido };
+        } catch {
+            return { excedente: 0, limite: null, consumido: 0 };
         }
     };
 
@@ -86,12 +136,15 @@ function Gastos() {
         if (!monto || !motivo.trim()) {
             setMensajeError('Todos los campos son obligatorios.');
             setTimeout(() => setMensajeError(''), 3000);
+            // Tarea 9 - Analitica: validacion fallida con motivo de lista fija.
+            track('error_validacion', { flujo: 'registrar_gasto', motivo: 'campos_obligatorios' });
             return;
         }
 
         if (/^\d+$/.test(motivo.trim())) {
             setMensajeError('El motivo debe contener una descripción válida en texto, no solo números.');
             setTimeout(() => setMensajeError(''), 4000);
+            track('error_validacion', { flujo: 'registrar_gasto', motivo: 'motivo_invalido' });
             return;
         }
 
@@ -99,6 +152,23 @@ function Gastos() {
 
         // Clase 21 - Analitica: el usuario inicia el flujo de registrar un movimiento.
         track('movimiento_iniciado', { tipo, categoria });
+
+        // Tarea 9 - Parte B: aviso antes de superar el limite de la categoria (solo gastos).
+        // Los ingresos no generan aviso (segun la slide).
+        if (tipo === 'gasto') {
+            const { excedente, limite } = await calcularExcedenteCategoria(categoria, Number(monto));
+            if (excedente > 0 && limite !== null) {
+                track('aviso_limite_mostrado', { categoria, supera_limite: true, flujo: 'registrar_gasto' });
+                const confirmar = window.confirm(
+                    `Te pasarías Bs ${excedente.toFixed(2)} del límite de ${categoria} (límite: Bs ${limite.toFixed(2)}). ¿Guardar igual?`
+                );
+                if (!confirmar) {
+                    track('aviso_limite_cancelado', { categoria, flujo: 'registrar_gasto' });
+                    return;
+                }
+                track('aviso_limite_confirmado', { categoria, supera_limite: true, flujo: 'registrar_gasto' });
+            }
+        }
 
         try {
 
@@ -138,6 +208,8 @@ function Gastos() {
 
             } else {
 
+                // Tarea 9 - Analitica: el backend rechazo el gasto (ej. supera presupuesto mensual).
+                track('movimiento_rechazado', { tipo, categoria, motivo: 'limite_mensual_excedido' });
                 console.log(data.error);
                 alert(data.error);
 
@@ -145,6 +217,7 @@ function Gastos() {
 
         } catch (error) {
             console.error('Error al registrar el gasto:', error);
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'servidor' });
         }
     };
 
