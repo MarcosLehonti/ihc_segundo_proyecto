@@ -5,6 +5,7 @@ const Presupuesto = require('../src/models/Presupuesto');
 
 jest.mock('../src/models/Gasto');
 jest.mock('../src/models/Presupuesto');
+jest.mock('../src/models/PresupuestoCategoria');
 
 describe('pagarGasto', () => {
 

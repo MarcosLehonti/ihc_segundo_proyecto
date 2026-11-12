@@ -11,6 +11,15 @@ interface Gasto {
     categoria?: string;
 }
 
+interface AvisoLimite {
+    accion: 'registrar' | 'editar';
+    categoria: string;
+    limite: number;
+    consumido: number;
+    montoSolicitado: number;
+    exceso: number;
+}
+
 function Gastos() {
 
     const [monto, setMonto] = useState('');
@@ -31,6 +40,9 @@ function Gastos() {
     const [mostrarMasFiltros, setMostrarMasFiltros] = useState(false);
 
     const [gastoEditando, setGastoEditando] = useState<number | null>(null);
+
+    // Tarea 9: aviso antes de superar el limite de la categoria.
+    const [avisoLimite, setAvisoLimite] = useState<AvisoLimite | null>(null);
 
     const token = localStorage.getItem('token');
 
@@ -81,7 +93,7 @@ function Gastos() {
         obtenerGastos();
     }, [buscar, filtroTipo, filtroCategoria, filtroEstado, filtroPeriodo, fechaDesde, fechaHasta]);
 
-    const handleRegitrarGasto = async () => {
+    const handleRegitrarGasto = async (confirmarExceso = false) => {
 
         if (!monto || !motivo.trim()) {
             setMensajeError('Todos los campos son obligatorios.');
@@ -114,12 +126,20 @@ function Gastos() {
                         monto,
                         motivo,
                         tipo,
-                        categoria
+                        categoria,
+                        confirmarExceso
                     })
                 }
             );
 
             const data = await response.json();
+
+            if (response.status === 409 && data.requiereConfirmacion) {
+                setAvisoLimite({ accion: 'registrar', ...data });
+                return;
+            }
+
+            setAvisoLimite(null);
 
             if (response.ok) {
 
@@ -206,7 +226,7 @@ function Gastos() {
 
     };
 
-    const handleActualizarGasto = async () => {
+    const handleActualizarGasto = async (confirmarExceso = false) => {
 
         if (!monto || !motivo.trim() || gastoEditando === null) {
             setMensajeError('Todos los campos son obligatorios.');
@@ -236,12 +256,20 @@ function Gastos() {
                         monto,
                         motivo,
                         tipo,
-                        categoria
+                        categoria,
+                        confirmarExceso
                     })
                 }
             );
 
             const data = await response.json();
+
+            if (response.status === 409 && data.requiereConfirmacion) {
+                setAvisoLimite({ accion: 'editar', ...data });
+                return;
+            }
+
+            setAvisoLimite(null);
 
             if (response.ok) {
 
@@ -313,14 +341,14 @@ function Gastos() {
 
             {gastoEditando === null ? (
 
-                <button onClick={handleRegitrarGasto}>
+                <button onClick={() => handleRegitrarGasto()} disabled={avisoLimite !== null}>
                     Registrar Gasto
                 </button>
 
             ) : (
 
                 <>
-                    <button onClick={handleActualizarGasto}>
+                    <button onClick={() => handleActualizarGasto()} disabled={avisoLimite !== null}>
                         Guardar cambios
                     </button>
                     <button
@@ -332,6 +360,7 @@ function Gastos() {
                             setTipo('gasto');
                             setCategoria('otros');
                             setMensajeError('');
+                            setAvisoLimite(null);
                         }}
                         style={{ marginLeft: '8px' }}
                     >
@@ -339,6 +368,33 @@ function Gastos() {
                     </button>
                 </>
 
+            )}
+
+            {/* Tarea 9: aviso antes de superar el limite. Confirmar guarda; cancelar no cambia nada. */}
+            {avisoLimite && (
+                <div
+                    role="alertdialog"
+                    aria-labelledby="aviso-limite-titulo"
+                    aria-describedby="aviso-limite-detalle"
+                    style={{ backgroundColor: '#fff3cd', color: '#1f2328', border: '1px solid #ffe69c', borderLeft: '4px solid #b45309', padding: '12px 14px', marginTop: '12px', borderRadius: '6px' }}
+                >
+                    <p id="aviso-limite-titulo" style={{ margin: 0, fontWeight: 'bold' }}>
+                        Te pasarías del límite de {avisoLimite.categoria} por Bs {avisoLimite.exceso.toFixed(2)}
+                    </p>
+                    <p id="aviso-limite-detalle" style={{ margin: '6px 0 10px 0' }}>
+                        Límite del mes: Bs {avisoLimite.limite.toFixed(2)} · Ya gastado: Bs {avisoLimite.consumido.toFixed(2)} · Este gasto: Bs {avisoLimite.montoSolicitado.toFixed(2)}.
+                        ¿Quieres guardarlo de todas formas?
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => avisoLimite.accion === 'registrar' ? handleRegitrarGasto(true) : handleActualizarGasto(true)}
+                    >
+                        Guardar de todas formas
+                    </button>
+                    <button type="button" onClick={() => setAvisoLimite(null)} style={{ marginLeft: '8px' }}>
+                        Cancelar
+                    </button>
+                </div>
             )}
 
             {mensajeExito && (
