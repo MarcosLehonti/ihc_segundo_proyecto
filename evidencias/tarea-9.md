@@ -1,113 +1,123 @@
-# Tarea 9 · Analítica en todo el producto + Aviso antes de superar el límite
+# Tarea 9 · Analítica en todo el producto y aviso antes de superar el límite
 
-**Integrantes:** Franco Enrique · Ariany Claure
-**Entrega:** 2026-11-12 18:00
+## Integrantes
+
+- Luis Enrique Franco Moron
+- Ariany Claure Cota
+
+Proyecto: **Presupuesto Estudiantil** (FinanzApp).
+
+Entrega: jueves 12/11/2026, 18:00. Dos commits separados:
+
+1. `feat(gastos): aviso antes de superar el limite de la categoria` (Parte B, funcionalidad).
+2. `feat(analitica): eventos y embudos en todos los flujos principales` (Parte A, analítica).
 
 ---
 
-## Parte A · Analítica en toda la app
+## Parte A · Analítica en todo el producto
 
-### App map con eventos
+Extendimos lo de la Clase 21 (que solo medía *registrar movimiento*) a todos los flujos principales. Antes de programar marcamos en el app map dónde va cada evento:
 
 ```
-┌──────────┐   ┌────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐
-│  Inicio  │ → │ Buscar │ → │   Detalle    │ → │  Formulario  │ → │  Éxito   │
-└──────────┘   └────────┘   └──────┬───────┘   └──────┬───────┘   └────┬─────┘
-                                   ○ validación      ● error limite     ○ guardado
-                                                     ○ aviso limite
+Login ──► Dashboard (presupuesto) ──► Gastos (registrar / buscar) ──► Aviso de límite ──► Guardado
+  ○ inicio   ○ inicio  ● error            ○ inicio  ● error  ● vacía      ○ mostrado          ○ éxito
+  ○ éxito    ○ éxito                      ○ éxito                         ○ cancelado/confirmado
+Metas: ○ meta creada ──► ○ fondos asignados   ● rechazo (fondos insuficientes)
 ```
+
+○ evento de inicio o de éxito · ● evento de error (validación, permiso) o búsqueda vacía.
+
+### Reglas que seguimos
+
+- **Lista cerrada** de eventos y de props en `frontend/src/utils/analitica.ts`. Un evento fuera de la lista no se guarda y una prop desconocida se descarta.
+- **Motivos de error de una lista fija** (`campos_vacios`, `motivo_numerico`, `sin_presupuesto`, `supera_presupuesto`, `limite_invalido`, `menor_que_gastado`, `credenciales`, `fondos_insuficientes`, `datos_invalidos`, `error_servidor`). Nunca se guarda el texto del backend.
+- **Sin datos personales**: no se guarda correo, nombre, motivo escrito, nombre de la meta, monto exacto ni el texto buscado. Las E2E lo verifican.
+- **No medimos** cada clic ni cada pantalla abierta, y no hay eventos sin una pregunta que respondan.
 
 ### Plan de eventos
 
-| evento | flujo | archivo:línea | pregunta que responde |
+| Evento | Flujo | archivo:línea | Pregunta que responde |
 |---|---|---|---|
-| `login_iniciado` | login | [frontend/src/pages/Login.tsx:24](../frontend/src/pages/Login.tsx) | ¿cuánta gente intenta entrar? |
-| `login_exitoso` | login | [Login.tsx:47](../frontend/src/pages/Login.tsx) | ¿cuánta termina entrando? |
-| `login_fallido` | login | [Login.tsx:55,64](../frontend/src/pages/Login.tsx) | ¿qué motivo frena? (`credenciales_invalidas`, `servidor`) |
-| `movimiento_iniciado` | registrar gasto | [frontend/src/pages/Gastos.tsx:102](../frontend/src/pages/Gastos.tsx) | ¿cuántos intentan registrar? |
-| `movimiento_guardado` | registrar gasto | [Gastos.tsx:140](../frontend/src/pages/Gastos.tsx) | ¿cuántos terminan con éxito? |
-| `movimiento_rechazado` | registrar gasto | [Gastos.tsx:155,166](../frontend/src/pages/Gastos.tsx) | ¿qué motivo rechaza? (`limite_mensual_excedido`, `servidor`) |
-| `error_validacion` | login + registrar gasto | Login.tsx:18 · Gastos.tsx:88,95 | ¿qué validaciones frenan al usuario? (motivo de lista fija) |
-| `aviso_limite_mostrado` | registrar gasto | [Gastos.tsx:111](../frontend/src/pages/Gastos.tsx) | ¿cuántos usuarios ven el aviso de límite? |
-| `aviso_limite_confirmado` | registrar gasto | [Gastos.tsx:118](../frontend/src/pages/Gastos.tsx) | ¿cuántos confirman con exceso? |
-| `aviso_limite_cancelado` | registrar gasto | [Gastos.tsx:114](../frontend/src/pages/Gastos.tsx) | ¿cuántos abortan al ver el aviso? |
-| `filtro_sin_resultado` | buscar/filtrar movimientos | [Gastos.tsx:76](../frontend/src/pages/Gastos.tsx) | ¿qué filtros no devuelven nada? |
+| `login_iniciado` | Iniciar sesión | `frontend/src/pages/Login.tsx:17` | ¿Cuántos intentan entrar? |
+| `login_exitoso` | Iniciar sesión | `frontend/src/pages/Login.tsx:43` | ¿Cuántos de esos intentos terminan dentro de la app? |
+| `login_rechazado` (`motivo`) | Iniciar sesión | `Login.tsx:20`, `:51`, `:58` | ¿Se traban por campos vacíos o por credenciales? |
+| `presupuesto_iniciado` (`accion`) | Presupuesto mensual | `frontend/src/pages/Dashboard.tsx:280` | ¿Cuántos intentan fijar o cambiar su límite? |
+| `presupuesto_guardado` (`accion`) | Presupuesto mensual | `Dashboard.tsx:333` | ¿Cuántos lo logran? |
+| `presupuesto_rechazado` (`motivo`) | Presupuesto mensual | `Dashboard.tsx:283`, `:289`, `:328` | ¿El límite que ponen es inválido o menor a lo ya gastado? |
+| `movimiento_iniciado` (`tipo`, `categoria`) | Registrar movimiento | `frontend/src/pages/Gastos.tsx:129` | ¿Cuántos empiezan a registrar un gasto o ingreso? |
+| `movimiento_guardado` (`tipo`, `categoria`, `supera_limite`) | Registrar movimiento | `Gastos.tsx:182` | ¿Cuántos terminan? ¿Cuántos quedaron sobre el límite? |
+| `movimiento_rechazado` (`motivo`) | Registrar movimiento | `Gastos.tsx:132`, `:139`, `:196`, `:203` | ¿Qué validación los frena más? |
+| `aviso_limite_mostrado` (`categoria`, `accion`) | Aviso de límite (Tarea 9) | `Gastos.tsx:170`, `:305` | ¿Con qué frecuencia y en qué categoría aparece el aviso? |
+| `aviso_limite_confirmado` | Aviso de límite (Tarea 9) | `Gastos.tsx:179`, `:314` | ¿Cuántos deciden pasarse igual? |
+| `aviso_limite_cancelado` | Aviso de límite (Tarea 9) | `Gastos.tsx:437` | ¿El aviso los hace cambiar de idea? |
+| `busqueda_sin_resultados` (`filtros`) | Buscar y filtrar | `Gastos.tsx:107` | ¿Qué combinación de filtros deja la lista vacía? |
+| `meta_creada` | Metas (Tarea 8) | `frontend/src/pages/Metas.tsx:91` | ¿Cuántos crean metas? |
+| `meta_fondos_asignados` | Metas (Tarea 8) | `Metas.tsx:92` | ¿Cuántos realmente ponen dinero en la meta? |
+| `meta_rechazada` (`accion`, `motivo`) | Metas (Tarea 8) | `Metas.tsx:93` | ¿Se traban por fondos insuficientes? |
 
-### Qué NO se trackea (regla "Dónde no")
+`busqueda_sin_resultados` guarda solo **qué** filtros estaban activos (`texto`, `tipo`, `categoria`, `estado`, `periodo`) y se registra **una vez** por combinación, no por cada tecla.
 
-- No se guarda cada clic ni cada pantalla abierta.
-- No se guarda el `motivo` libre del gasto (texto del usuario).
-- No se guarda el email, nombre, ni monto exacto.
-- Los campos de `motivo` en eventos de error vienen de una **lista fija** (`MotivoError` en [frontend/src/utils/analitica.ts](../frontend/src/utils/analitica.ts)), no texto libre.
+### Panel con embudos (`/analitica`)
 
-### Panel con embudos
+`frontend/src/pages/Analitica.tsx` muestra:
 
-- Ruta: [frontend/src/pages/Analitica.tsx](../frontend/src/pages/Analitica.tsx)
-- URL: http://localhost:5173/analitica
-- Muestra 3 embudos con la caída entre pasos + conteo de errores por motivo + filtros sin resultado + últimos 15 eventos.
+- **Un embudo por flujo principal**: Iniciar sesión, Registrar movimiento, Aviso de límite, Presupuesto mensual y Metas de ahorro. Cada paso indica cuántos eventos hay y la **caída** respecto del paso anterior.
+- **El paso con la mayor caída** de toda la app, destacado arriba.
+- **Errores que frenan la tarea**, agrupados por evento y motivo.
+- **Búsquedas o filtros sin resultados**, agrupados por filtros usados.
+- Los últimos 10 eventos.
 
-### Paso con la mayor caída (hoy)
+### Paso con la mayor caída y qué cambiaríamos
 
-Según la corrida de pruebas en sesión del equipo:
-- **Embudo "Registrar movimiento"**: la caída más grande se da en `Inicio → Éxito` cuando el gasto excede el presupuesto mensual (el backend rechaza). Motivo que domina: `limite_mensual_excedido`.
-- **Embudo "Aviso de límite por categoría"**: muchos usuarios ven el aviso pero algunos cancelan al ver el exceso. Esto es **el comportamiento deseado** (la Parte B evita gastos por error).
+Datos de la sesión de prueba grabada por las E2E (`e2e/analitica.spec.ts`, prueba de registrar movimiento):
 
-### Qué cambiaríamos
+| Flujo | Paso | Eventos | Caída |
+|---|---|---|---|
+| Registrar movimiento | `movimiento_iniciado` → `movimiento_guardado` | 3 → 1 | **67 %** |
+| Aviso de límite | `aviso_limite_mostrado` → `aviso_limite_confirmado` | 2 → 1 | 50 % |
+| Iniciar sesión | `login_iniciado` → `login_exitoso` | 1 → 1 | 0 % |
 
-1. En la caída `Inicio → Éxito` por `limite_mensual_excedido`: agregar el **aviso también para el presupuesto mensual general** (no solo por categoría), para que el usuario sepa *antes* de tocar "Registrar".
-2. En el filtro de movimientos: si `filtro_sin_resultado` es muy frecuente, ofrecer un botón "Limpiar filtros" más visible (ya está hecho en la mejora de Clase 20).
+**Mayor caída: registrar movimiento (67 %).** Los intentos que no terminan se reparten entre `movimiento_rechazado` con motivo `motivo_numerico` (validación) y `aviso_limite_cancelado`.
+
+**Qué cambiaríamos:**
+
+1. **Validar el motivo mientras se escribe**, no al presionar *Registrar Gasto*. Hoy el error aparece recién al final y obliga a reintentar.
+2. **Mostrar el restante de la categoría junto al selector de categoría** (por ejemplo «Comida: te quedan Bs 40»). Así el aviso deja de ser una sorpresa y la persona ajusta el monto antes de enviarlo.
+
+Estos números salen de datos de prueba. Para decidir de verdad hay que repetir la medición con usuarios reales en clase.
 
 ---
 
 ## Parte B · Aviso antes de superar el límite
 
-### Qué hace
+**Regla:** si un gasto nuevo o editado haría pasar el límite de su **categoría** en ese mes, la app muestra **cuánto se pasaría** y pide confirmación. **Confirmar** guarda el gasto y la categoría queda en estado *excedido*. **Cancelar** no cambia nada. **Los ingresos no generan aviso.**
 
-Cuando el usuario toca **Registrar Gasto** y el gasto haría **pasar el límite de la categoría + mes**:
+### Cómo funciona
 
-1. La app calcula cuánto se pasaría (consultando `GET /api/presupuesto-categoria/obtener?mes=X&anio=Y`).
-2. Muestra `window.confirm("Te pasarías Bs X del límite de <categoría>. ¿Guardar igual?")`.
-3. **Confirmar** → el gasto se guarda (queda excedido).
-4. **Cancelar** → nada cambia (ni se envía el POST al backend).
-5. **Los ingresos NO** disparan el aviso (`tipo === 'gasto'` es el gate).
+- **Backend** (`backend/src/controllers/gastoController.js`): la función `calcularExcesoCategoria` suma los gastos del mes en esa categoría (sin ingresos y, al editar, sin contar dos veces el gasto que se edita). Si el nuevo total supera el límite y la petición no trae `confirmarExceso: true`, responde **409** con `limite`, `consumido`, `montoSolicitado` y `exceso`, y **no guarda nada**. La regla vive en el servidor, así que no se salta llamando a la API directamente.
+- **Frontend** (`frontend/src/pages/Gastos.tsx`): al recibir el 409 muestra un `alertdialog` con «Te pasarías del límite de comida por Bs 30.00», el límite, lo ya gastado y el monto del gasto. Tiene dos botones, **Guardar de todas formas** (reenvía con `confirmarExceso: true`) y **Cancelar** (cierra el aviso sin enviar nada). Mientras el aviso está abierto, el botón de registrar queda deshabilitado para que no se envíe dos veces.
+- Si no hay límite de categoría definido, no hay aviso. El tope del presupuesto mensual sigue igual que antes.
 
-### Archivos tocados
+### Pruebas
 
-| Archivo | Cambio |
-|---|---|
-| [frontend/src/pages/Gastos.tsx](../frontend/src/pages/Gastos.tsx) | Función `calcularExcedenteCategoria()` + lógica de aviso en `handleRegitrarGasto()` |
-| [frontend/src/utils/analitica.ts](../frontend/src/utils/analitica.ts) | Ampliación de `PropsEvento` con `supera_limite`, `motivo`, `flujo` |
-| [e2e/aviso-limite-categoria.spec.ts](../e2e/aviso-limite-categoria.spec.ts) | 3 tests nuevos |
-
-### Pruebas E2E (3 casos — los mismos que pide la slide)
-
-Archivo: [e2e/aviso-limite-categoria.spec.ts](../e2e/aviso-limite-categoria.spec.ts)
-
-| Caso | Qué hace | Resultado esperado |
+| Caso pedido | Prueba | Resultado |
 |---|---|---|
-| **1 · Sin aviso** | gasto de Bs 30 con límite de Bs 100 en `comida` | El gasto se guarda, no aparece `window.confirm`. |
-| **2 · Aviso cancelado** | gasto de Bs 150 con límite de Bs 100 en `comida`, usuario **cancela** | No se envía el POST, no aparece en la lista, el backend tiene 0 gastos. |
-| **3 · Aviso confirmado** | gasto de Bs 150 con límite de Bs 100 en `comida`, usuario **confirma** | El gasto se guarda, la categoría queda con `estado: 'excedido'` y `consumido: 150`. |
+| Un gasto sin aviso | `e2e/aviso-limite.spec.ts` paso 1: Bs 60 con límite de comida Bs 100 | Se guarda, no aparece aviso, consumido = 60 |
+| Uno con aviso cancelado (todo igual) | paso 2: Bs 70 → aviso «por Bs 30.00» → Cancelar | Consumido sigue en 60, estado `ok`, el gasto no aparece en la lista |
+| Otro confirmado (queda excedido) | paso 3: mismo gasto → Guardar de todas formas | Consumido = 130, estado `excedido` |
+| Ingresos no generan aviso | paso 4: ingreso Bs 500 en comida | Se guarda sin aviso |
+| Editar también avisa | segunda prueba: editar Bs 40 → 150 | Aviso «por Bs 50.00»; al cancelar, consumido sigue en 40 |
 
-**Resultado de la corrida:** `3 passed (21.0 s)` corriendo con:
+Pruebas unitarias del backend: `backend/tests/avisoLimite.test.js` (sin aviso, 409 sin guardar, confirmado guarda, ingreso sin aviso, edición sin cambios al pedir confirmación).
+
+### Comandos
 
 ```bash
-pnpm exec playwright test e2e/aviso-limite-categoria.spec.ts --project=chromium
+pnpm --dir backend exec jest --runInBand
+pnpm test:e2e e2e/aviso-limite.spec.ts e2e/analitica.spec.ts
+pnpm exec playwright show-report
 ```
 
-### Lo que NO se tocó
+Resultado: backend **44/44**. E2E de la Tarea 9: **7/7** (2 de aviso de límite + 5 de analítica).
 
-- Modelo/schema de BD (no hace falta — se reutiliza `PresupuestoCategoria`).
-- Backend del endpoint `POST /api/gastos/registrar` (sigue aceptando el POST; el aviso es lógica de UI).
-- Flujo de ingresos (no genera aviso, como pide la slide).
-
----
-
-## Cómo probar manualmente (10 seg)
-
-1. Login con `e2e@test.com` / `e2e12345`.
-2. En **Dashboard**, poner un límite para la categoría `comida` de **Bs 100**.
-3. En **Gastos**, registrar un gasto de `monto: 150, motivo: "test", categoria: comida, tipo: gasto`.
-4. Ver el `window.confirm` que dice `"Te pasarías Bs 50.00 del límite de comida..."`.
-5. Cancelar → nada cambia. Confirmar → el gasto se guarda.
-6. Entrar a **http://localhost:5173/analitica** → ver el embudo "Aviso de límite por categoría" y los eventos.
+Suite E2E completa: **18/18**. Al hacer esta tarea arreglamos 5 E2E antiguas de `e2e/presupuesto.spec.ts`, que buscaban los textos «Total gastado:» y «Saldo disponible:» que ya no existen desde el rediseño del Dashboard de la Clase 20. También subimos el contraste del botón principal (`.btn`, de `#aa3bff` a `#7e22ce`), que axe marcaba por debajo de 4.5:1.

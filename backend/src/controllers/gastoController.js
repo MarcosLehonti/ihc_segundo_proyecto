@@ -1,10 +1,53 @@
 const Gasto = require('../models/Gasto');
 const Presupuesto = require('../models/Presupuesto');
+const PresupuestoCategoria = require('../models/PresupuestoCategoria');
 const { Op } = require('sequelize');
+
+// Tarea 9 - Aviso antes de superar el limite de la categoria.
+// Si el gasto haria pasar el limite de su categoria en ese mes, devuelve
+// los datos del aviso (cuanto se pasaria) para pedir confirmacion.
+// Los ingresos nunca generan aviso. excluirId evita contar dos veces
+// el gasto que se esta editando.
+async function calcularExcesoCategoria({ userId, tipo, categoria, mes, anio, monto, excluirId }) {
+    if (tipo === 'ingreso') return null;
+
+    const limiteCategoria = await PresupuestoCategoria.findOne({
+        where: { userId, categoria, mes, anio }
+    });
+    if (!limiteCategoria) return null;
+
+    const where = {
+        userId,
+        categoria,
+        tipo: { [Op.ne]: 'ingreso' },
+        fecha: {
+            [Op.gte]: new Date(anio, mes - 1, 1),
+            [Op.lt]: new Date(anio, mes, 1)
+        }
+    };
+    if (excluirId !== undefined) where.id = { [Op.ne]: excluirId };
+
+    const gastos = await Gasto.findAll({ where, attributes: ['monto'] });
+    const consumido = gastos.reduce((total, item) => total + Number(item.monto), 0);
+    const limite = Number(limiteCategoria.limite);
+    const exceso = Number((consumido + monto - limite).toFixed(2));
+
+    if (exceso <= 0) return null;
+
+    return {
+        requiereConfirmacion: true,
+        error: `Este gasto supera el límite de ${categoria} en Bs ${exceso.toFixed(2)}`,
+        categoria,
+        limite: Number(limite.toFixed(2)),
+        consumido: Number(consumido.toFixed(2)),
+        montoSolicitado: Number(monto.toFixed(2)),
+        exceso
+    };
+}
 
 async function registrarGasto(req, res) {
     try {
-        const { monto, motivo, tipo, categoria } = req.body;
+        const { monto, motivo, tipo, categoria, confirmarExceso } = req.body;
         const userId = req.user.id;
         const montoNumerico = Number(monto);
 
@@ -79,14 +122,30 @@ async function registrarGasto(req, res) {
             });
         }
 
+        const tipoNormalizado = tipo ? String(tipo).toLowerCase().trim() : 'gasto';
+        const categoriaNormalizada = categoria ? String(categoria).toLowerCase().trim() : 'otros';
+
+        // Tarea 9: si supera el limite de la categoria, pedir confirmacion antes de guardar
+        if (confirmarExceso !== true) {
+            const aviso = await calcularExcesoCategoria({
+                userId,
+                tipo: tipoNormalizado,
+                categoria: categoriaNormalizada,
+                mes,
+                anio,
+                monto: montoNumerico
+            });
+            if (aviso) return res.status(409).json(aviso);
+        }
+
         // Registrar el gasto si está dentro del presupuesto
         const gasto = await Gasto.create({
             monto: montoNumerico,
             motivo: String(motivo).trim(),
             fecha: ahora,
             userId,
-            tipo: tipo ? String(tipo).toLowerCase().trim() : 'gasto',
-            categoria: categoria ? String(categoria).toLowerCase().trim() : 'otros'
+            tipo: tipoNormalizado,
+            categoria: categoriaNormalizada
         });
 
         return res.status(201).json(gasto);
@@ -142,7 +201,7 @@ async function eliminarGasto(req, res) {
 async function editarGasto(req, res) {
     try {
         const { id } = req.params;
-        const { monto, motivo, tipo, categoria } = req.body;
+        const { monto, motivo, tipo, categoria, confirmarExceso } = req.body;
         const userId = req.user.id;
         const montoNumerico = Number(monto);
 
@@ -230,6 +289,20 @@ async function editarGasto(req, res) {
                 disponible,
                 montoSolicitado: Number(montoNumerico.toFixed(2))
             });
+        }
+
+        // Tarea 9: si la edicion hace pasar el limite de la categoria, pedir confirmacion
+        if (confirmarExceso !== true) {
+            const aviso = await calcularExcesoCategoria({
+                userId,
+                tipo: tipo ? String(tipo).toLowerCase().trim() : (gasto.tipo || 'gasto'),
+                categoria: categoria ? String(categoria).toLowerCase().trim() : (gasto.categoria || 'otros'),
+                mes,
+                anio,
+                monto: montoNumerico,
+                excluirId: gasto.id
+            });
+            if (aviso) return res.status(409).json(aviso);
         }
 
         // Actualizar el gasto

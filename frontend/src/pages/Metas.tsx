@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import { track, type Motivo } from '../utils/analitica';
+
+// Motivo de rechazo de la lista fija (nunca el texto del backend).
+const motivoMeta = (error: string | undefined): Motivo =>
+    (error || '').toLowerCase().includes('fondos insuficientes') ? 'fondos_insuficientes' : 'datos_invalidos';
 
 interface Meta {
     id: number;
@@ -69,7 +74,12 @@ function Metas() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const enviar = async (url: string, body: object, exito: string) => {
+    const enviar = async (
+        url: string,
+        body: object,
+        exito: string,
+        accion: 'registrar' | 'asignar' | 'retirar' | 'transferir'
+    ) => {
         setMensaje(null);
         const r = await fetch(url, {
             method: 'POST',
@@ -77,6 +87,10 @@ function Metas() {
             body: JSON.stringify(body)
         });
         const data = await r.json().catch(() => ({}));
+        // Tarea 9 - Analitica: sin nombre de la meta ni montos.
+        if (r.ok && accion === 'registrar') track('meta_creada');
+        if (r.ok && accion === 'asignar') track('meta_fondos_asignados', { accion });
+        if (!r.ok) track('meta_rechazada', { accion, motivo: motivoMeta(data.error) });
         if (r.ok) setMensaje({ tipo: 'ok', texto: exito });
         else setMensaje({ tipo: 'error', texto: data.error || 'No se pudo completar la operación' });
         await cargar();
@@ -85,7 +99,7 @@ function Metas() {
 
     const crear = async (e: React.FormEvent) => {
         e.preventDefault();
-        const ok = await enviar(API, { nombre, montoObjetivo: objetivo, fechaObjetivo: fecha }, `Meta "${nombre}" creada`);
+        const ok = await enviar(API, { nombre, montoObjetivo: objetivo, fechaObjetivo: fecha }, `Meta "${nombre}" creada`, 'registrar');
         if (ok) { setNombre(''); setObjetivo(''); setFecha(''); }
     };
 
@@ -94,7 +108,8 @@ function Metas() {
         const ok = await enviar(
             `${API}/${meta.id}/${accion}`,
             { monto },
-            accion === 'asignar' ? `Asignaste ${bs(monto)} a ${meta.nombre}` : `Retiraste ${bs(monto)} de ${meta.nombre}`
+            accion === 'asignar' ? `Asignaste ${bs(monto)} a ${meta.nombre}` : `Retiraste ${bs(monto)} de ${meta.nombre}`,
+            accion
         );
         if (ok) setMontos({ ...montos, [meta.id]: '' });
     };
@@ -104,7 +119,8 @@ function Metas() {
         const ok = await enviar(
             `${API}/transferir`,
             { origenId: Number(origenId), destinoId: Number(destinoId), monto: montoTransferencia },
-            `Transferiste ${bs(montoTransferencia)} entre metas`
+            `Transferiste ${bs(montoTransferencia)} entre metas`,
+            'transferir'
         );
         if (ok) setMontoTransferencia('');
     };
@@ -256,7 +272,7 @@ function Campo({ etiqueta, children }: { etiqueta: string; children: React.React
 
 function Dato({ titulo, valor, testId, destacado }: { titulo: string; valor?: number; testId: string; destacado?: boolean }) {
     return (
-        <div style={{ padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: destacado ? '#e8f1fb' : undefined }}>
+        <div style={{ padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: destacado ? '#e8f1fb' : undefined, color: destacado ? '#0b2e59' : undefined }}>
             <div style={{ fontSize: 13 }}>{titulo}</div>
             <div data-testid={testId} style={{ fontSize: 22, fontWeight: 700 }}>{valor === undefined ? '…' : bs(valor)}</div>
         </div>

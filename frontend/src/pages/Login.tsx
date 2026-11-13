@@ -13,7 +13,11 @@ function Login() {
     const handleLogin = async () => {
         setMensajeError('');
 
+        // Tarea 9 - Analitica: nunca se guarda el correo, solo el paso del flujo.
+        track('login_iniciado');
+
         if (!email.trim() || !password) {
+            track('login_rechazado', { motivo: 'campos_vacios' });
             setMensajeError('Por favor ingresa tu correo y contraseña.');
             // Tarea 9 - Analitica: validacion fallida del formulario de login.
             track('error_validacion', { flujo: 'login', motivo: 'campos_obligatorios' });
@@ -41,6 +45,7 @@ function Login() {
             if (response.ok) {
 
                 localStorage.setItem('token', data.token);
+                track('login_exitoso');
 
                 console.log('Token guardado correctamente');
 
@@ -51,6 +56,7 @@ function Login() {
 
             } else {
 
+                track('login_rechazado', { motivo: 'credenciales' });
                 setMensajeError(data.error || 'Credenciales incorrectas. Verifica tus datos.');
                 track('login_fallido', { flujo: 'login', motivo: 'credenciales_invalidas' });
 
@@ -58,6 +64,7 @@ function Login() {
 
         } catch (error) {
 
+            track('login_rechazado', { motivo: 'error_servidor' });
             console.error('Error al conectar con el servidor:', error);
             setMensajeError('No se pudo conectar con el servidor. Intenta nuevamente.');
             track('login_fallido', { flujo: 'login', motivo: 'servidor' });

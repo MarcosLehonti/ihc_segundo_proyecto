@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import { track } from '../utils/analitica';
 
 interface User {
     id: number;
@@ -273,13 +274,19 @@ function Dashboard() {
         setMensaje('');
 
         const limiteNumerico = Number(limite);
+        const accion = resumen ? 'editar' : 'registrar';
+
+        // Tarea 9 - Analitica: flujo de presupuesto mensual (sin el monto exacto).
+        track('presupuesto_iniciado', { accion });
 
         if (!Number.isFinite(limiteNumerico) || limiteNumerico <= 0) {
+            track('presupuesto_rechazado', { accion, motivo: 'limite_invalido' });
             setError('El límite mensual debe ser mayor que cero');
             return;
         }
 
         if (resumen && limiteNumerico < resumen.gastado) {
+            track('presupuesto_rechazado', { accion, motivo: 'menor_que_gastado' });
             setError('El límite no puede ser menor que lo que ya has gastado en el mes');
             return;
         }
@@ -318,10 +325,12 @@ function Dashboard() {
             const data = await response.json();
 
             if (!response.ok) {
+                track('presupuesto_rechazado', { accion, motivo: response.status === 400 ? 'limite_invalido' : 'error_servidor' });
                 setError(data.error || 'No se pudo guardar el presupuesto');
                 return;
             }
 
+            track('presupuesto_guardado', { accion });
             setMensaje(data.message || 'Presupuesto guardado correctamente');
             await cargarPresupuesto();
         } catch (error) {
