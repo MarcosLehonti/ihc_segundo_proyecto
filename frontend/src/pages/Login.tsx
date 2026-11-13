@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { track } from '../utils/analitica';
+import { guardarToken } from '../utils/auth';
 
 function Login() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [mensajeError, setMensajeError] = useState('');
+    // Clase 22 - Patron oscuro corregido (Privacidad por defecto):
+    // desmarcado por defecto para que el token no persista salvo decision explicita.
+    const [mantenerSesion, setMantenerSesion] = useState(false);
 
     const navigate = useNavigate();
 
@@ -44,7 +48,7 @@ function Login() {
 
             if (response.ok) {
 
-                localStorage.setItem('token', data.token);
+                guardarToken(data.token, mantenerSesion);
                 track('login_exitoso');
 
                 console.log('Token guardado correctamente');
@@ -91,6 +95,16 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
             />
+
+            {/* Clase 22 - Privacidad por defecto: viene DESMARCADO y con el alcance explicado. */}
+            <label style={{ display: 'block', margin: '10px 0' }}>
+                <input
+                    type="checkbox"
+                    checked={mantenerSesion}
+                    onChange={(e) => setMantenerSesion(e.target.checked)}
+                />
+                {' '}Mantener sesión iniciada (solo si usás tu propio dispositivo)
+            </label>
 
             <button onClick={handleLogin}>
                 Iniciar sesión
