@@ -1,4 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { track, type Motivo } from '../utils/analitica';
+import { obtenerToken } from '../utils/auth';
+
+// Traduce el error del backend a un motivo de la lista fija (sin guardar el texto).
+function motivoDesdeError(error: string | undefined): Motivo {
+    const texto = (error || '').toLowerCase();
+    if (texto.includes('no tienes un presupuesto') || texto.includes('no existe un presupuesto')) return 'sin_presupuesto';
+    if (texto.includes('supera')) return 'supera_presupuesto';
+    if (texto.includes('monto positivo')) return 'campos_vacios';
+    return 'error_servidor';
+}
 
 interface Gasto {
     id: number;
@@ -8,6 +19,15 @@ interface Gasto {
     estado: string;
     tipo?: string;
     categoria?: string;
+}
+
+interface AvisoLimite {
+    accion: 'registrar' | 'editar';
+    categoria: string;
+    limite: number;
+    consumido: number;
+    montoSolicitado: number;
+    exceso: number;
 }
 
 function Gastos() {
@@ -31,7 +51,13 @@ function Gastos() {
 
     const [gastoEditando, setGastoEditando] = useState<number | null>(null);
 
-    const token = localStorage.getItem('token');
+    // Tarea 9: aviso antes de superar el limite de la categoria.
+    const [avisoLimite, setAvisoLimite] = useState<AvisoLimite | null>(null);
+
+    // Tarea 9 - Analitica: no repetir busqueda_sin_resultados por cada tecla.
+    const ultimaBusquedaVacia = useRef('');
+
+    const token = obtenerToken();
 
     const obtenerGastos = async () => {
 
@@ -67,6 +93,23 @@ function Gastos() {
             if (response.ok) {
                 setGastos(data.movimientos || []);
                 setTotalFiltrado(Number(data.total) || 0);
+
+                // Tarea 9 - Analitica: busqueda o filtro sin resultados.
+                // Solo se guarda QUE filtros estaban activos, nunca el texto buscado.
+                const filtros = [
+                    buscar.trim() && 'texto',
+                    filtroTipo && 'tipo',
+                    filtroCategoria && 'categoria',
+                    filtroEstado && 'estado',
+                    filtroPeriodo && 'periodo'
+                ].filter(Boolean).join(',');
+                const sinResultados = (data.movimientos || []).length === 0;
+                if (filtros && sinResultados && ultimaBusquedaVacia.current !== filtros) {
+                    track('busqueda_sin_resultados', { filtros });
+                    ultimaBusquedaVacia.current = filtros;
+                } else if (!sinResultados) {
+                    ultimaBusquedaVacia.current = '';
+                }
             } else {
                 console.log(data.error);
             }
@@ -80,15 +123,21 @@ function Gastos() {
         obtenerGastos();
     }, [buscar, filtroTipo, filtroCategoria, filtroEstado, filtroPeriodo, fechaDesde, fechaHasta]);
 
-    const handleRegitrarGasto = async () => {
+    const handleRegitrarGasto = async (confirmarExceso = false) => {
+
+        // Clase 21 - Analitica: el usuario inicia el flujo de registrar un movimiento.
+        // Al confirmar el aviso no se cuenta un segundo inicio.
+        if (!confirmarExceso) track('movimiento_iniciado', { tipo, categoria });
 
         if (!monto || !motivo.trim()) {
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'campos_vacios' });
             setMensajeError('Todos los campos son obligatorios.');
             setTimeout(() => setMensajeError(''), 3000);
             return;
         }
 
         if (/^\d+$/.test(motivo.trim())) {
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'motivo_numerico' });
             setMensajeError('El motivo debe contener una descripción válida en texto, no solo números.');
             setTimeout(() => setMensajeError(''), 4000);
             return;
@@ -110,14 +159,28 @@ function Gastos() {
                         monto,
                         motivo,
                         tipo,
-                        categoria
+                        categoria,
+                        confirmarExceso
                     })
                 }
             );
 
             const data = await response.json();
 
+            if (response.status === 409 && data.requiereConfirmacion) {
+                track('aviso_limite_mostrado', { categoria, accion: 'registrar' });
+                setAvisoLimite({ accion: 'registrar', ...data });
+                return;
+            }
+
+            setAvisoLimite(null);
+
             if (response.ok) {
+
+                if (confirmarExceso) track('aviso_limite_confirmado', { categoria, accion: 'registrar' });
+
+                // Clase 21 - Analitica: solo llegamos aqui si el movimiento se guardo.
+                track('movimiento_guardado', { tipo, categoria, supera_limite: confirmarExceso });
 
                 setMensajeExito('Gasto registrado correctamente.');
                 setTimeout(() => setMensajeExito(''), 3000);
@@ -131,12 +194,14 @@ function Gastos() {
 
             } else {
 
+                track('movimiento_rechazado', { tipo, categoria, motivo: motivoDesdeError(data.error) });
                 console.log(data.error);
                 alert(data.error);
 
             }
 
         } catch (error) {
+            track('movimiento_rechazado', { tipo, categoria, motivo: 'error_servidor' });
             console.error('Error al registrar el gasto:', error);
         }
     };
@@ -199,7 +264,7 @@ function Gastos() {
 
     };
 
-    const handleActualizarGasto = async () => {
+    const handleActualizarGasto = async (confirmarExceso = false) => {
 
         if (!monto || !motivo.trim() || gastoEditando === null) {
             setMensajeError('Todos los campos son obligatorios.');
@@ -229,14 +294,25 @@ function Gastos() {
                         monto,
                         motivo,
                         tipo,
-                        categoria
+                        categoria,
+                        confirmarExceso
                     })
                 }
             );
 
             const data = await response.json();
 
+            if (response.status === 409 && data.requiereConfirmacion) {
+                track('aviso_limite_mostrado', { categoria, accion: 'editar' });
+                setAvisoLimite({ accion: 'editar', ...data });
+                return;
+            }
+
+            setAvisoLimite(null);
+
             if (response.ok) {
+
+                if (confirmarExceso) track('aviso_limite_confirmado', { categoria, accion: 'editar' });
 
                 setMensajeExito('Gasto actualizado correctamente.');
                 setTimeout(() => setMensajeExito(''), 3000);
@@ -268,7 +344,7 @@ function Gastos() {
                 <h1>{gastoEditando === null ? 'Ingresar Gastos' : `Editando Gasto #${gastoEditando}`}</h1>
 
             {gastoEditando !== null && (
-                <div style={{ backgroundColor: '#e7f3fe', borderLeft: '4px solid #2196F3', padding: '10px 14px', marginBottom: '14px', borderRadius: '4px' }}>
+                <div style={{ backgroundColor: '#e7f3fe', color: '#1f2328', borderLeft: '4px solid #2196F3', padding: '10px 14px', marginBottom: '14px', borderRadius: '4px' }}>
                     <p style={{ margin: 0, fontWeight: 'bold', color: '#0d47a1' }}>
                         Modo edición activo: Gasto #{gastoEditando} ({motivo || 'sin motivo'})
                     </p>
@@ -306,14 +382,14 @@ function Gastos() {
 
             {gastoEditando === null ? (
 
-                <button onClick={handleRegitrarGasto}>
+                <button onClick={() => handleRegitrarGasto()} disabled={avisoLimite !== null}>
                     Registrar Gasto
                 </button>
 
             ) : (
 
                 <>
-                    <button onClick={handleActualizarGasto}>
+                    <button onClick={() => handleActualizarGasto()} disabled={avisoLimite !== null}>
                         Guardar cambios
                     </button>
                     <button
@@ -325,6 +401,7 @@ function Gastos() {
                             setTipo('gasto');
                             setCategoria('otros');
                             setMensajeError('');
+                            setAvisoLimite(null);
                         }}
                         style={{ marginLeft: '8px' }}
                     >
@@ -332,6 +409,40 @@ function Gastos() {
                     </button>
                 </>
 
+            )}
+
+            {/* Tarea 9: aviso antes de superar el limite. Confirmar guarda; cancelar no cambia nada. */}
+            {avisoLimite && (
+                <div
+                    role="alertdialog"
+                    aria-labelledby="aviso-limite-titulo"
+                    aria-describedby="aviso-limite-detalle"
+                    style={{ backgroundColor: '#fff3cd', color: '#1f2328', border: '1px solid #ffe69c', borderLeft: '4px solid #b45309', padding: '12px 14px', marginTop: '12px', borderRadius: '6px' }}
+                >
+                    <p id="aviso-limite-titulo" style={{ margin: 0, fontWeight: 'bold' }}>
+                        Te pasarías del límite de {avisoLimite.categoria} por Bs {avisoLimite.exceso.toFixed(2)}
+                    </p>
+                    <p id="aviso-limite-detalle" style={{ margin: '6px 0 10px 0' }}>
+                        Límite del mes: Bs {avisoLimite.limite.toFixed(2)} · Ya gastado: Bs {avisoLimite.consumido.toFixed(2)} · Este gasto: Bs {avisoLimite.montoSolicitado.toFixed(2)}.
+                        ¿Quieres guardarlo de todas formas?
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => avisoLimite.accion === 'registrar' ? handleRegitrarGasto(true) : handleActualizarGasto(true)}
+                    >
+                        Guardar de todas formas
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            track('aviso_limite_cancelado', { categoria: avisoLimite.categoria, accion: avisoLimite.accion });
+                            setAvisoLimite(null);
+                        }}
+                        style={{ marginLeft: '8px' }}
+                    >
+                        Cancelar
+                    </button>
+                </div>
             )}
 
             {mensajeExito && (
@@ -369,6 +480,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: (!filtroTipo && !filtroPeriodo) ? '#d0d7de' : '#f6f8fa',
                             border: '1px solid #d0d7de',
                             borderRadius: '6px'
@@ -382,6 +494,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroTipo === 'gasto' ? '#cfe2ff' : '#f6f8fa',
                             border: '1px solid #b6d4fe',
                             borderRadius: '6px'
@@ -395,6 +508,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroTipo === 'ingreso' ? '#d1e7dd' : '#f6f8fa',
                             border: '1px solid #a3cfbb',
                             borderRadius: '6px'
@@ -408,6 +522,7 @@ function Gastos() {
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: filtroPeriodo === 'este_mes' ? '#fff3cd' : '#f6f8fa',
                             border: '1px solid #ffe69c',
                             borderRadius: '6px'
@@ -415,12 +530,57 @@ function Gastos() {
                     >
                         Este mes
                     </button>
+                    {/* Clase 20 - Arquitectura de informacion: subir el filtro de estado al primer nivel */}
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', marginLeft: '8px' }}>| Estado:</span>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroEstado('')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            color: '#1f2328',
+                            backgroundColor: !filtroEstado ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Todos los estados
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroEstado(filtroEstado === 'pendiente' ? '' : 'pendiente')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            color: '#1f2328',
+                            backgroundColor: filtroEstado === 'pendiente' ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Pendientes
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFiltroEstado(filtroEstado === 'pagado' ? '' : 'pagado')}
+                        style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            color: '#1f2328',
+                            backgroundColor: filtroEstado === 'pagado' ? '#cfe2ff' : '#f6f8fa',
+                            border: '1px solid #b6d4fe',
+                            borderRadius: '6px'
+                        }}
+                    >
+                        Pagados
+                    </button>
                     <button
                         type="button"
                         onClick={() => setMostrarMasFiltros(!mostrarMasFiltros)}
                         style={{
                             padding: '6px 12px',
                             cursor: 'pointer',
+                            color: '#1f2328',
                             backgroundColor: mostrarMasFiltros ? '#e9ecef' : '#ffffff',
                             border: '1px solid #6c757d',
                             borderRadius: '6px',
@@ -433,7 +593,7 @@ function Gastos() {
 
                 {/* Divulgacion progresiva: solo se muestran los 4 desplegables si el usuario los solicita */}
                 {mostrarMasFiltros && (
-                    <div style={{ padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px solid #e9ecef', marginBottom: '10px' }}>
+                    <div style={{ padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px solid #e9ecef', color: '#1f2328', marginBottom: '10px' }}>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '3px' }}>Tipo:</label>

@@ -1,10 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { limpiarToken } from '../utils/auth';
 
 function Navbar() {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        limpiarToken();
         navigate('/login');
     };
 
@@ -54,6 +55,9 @@ function Navbar() {
                 </NavLink>
                 <NavLink to="/historial" style={linkStyle}>
                     Historial
+                </NavLink>
+                <NavLink to="/metas" style={linkStyle}>
+                    Metas
                 </NavLink>
             </nav>
 

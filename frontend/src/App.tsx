@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Pagos from './pages/Pagos';
 import Historial from './pages/Historial';
+import Metas from './pages/Metas';
+import Analitica from './pages/Analitica';
 
 function App() {
 
@@ -25,12 +27,16 @@ function App() {
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
+        {/* Clase 21 - Analitica: panel propio, solo desarrollo, sin login */}
+        <Route path="/analitica" element={<Analitica />} />
+
         <Route element={<ProtectedRoute />}>
 
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/gastos" element={<Gastos />} />
           <Route path="/pagos" element={<Pagos />} />
           <Route path="/historial" element={<Historial />} />
+          <Route path="/metas" element={<Metas />} />
 
         </Route>
 

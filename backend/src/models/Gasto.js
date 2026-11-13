@@ -37,7 +37,22 @@ const Gasto = sequelize.define('Gasto', {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: "otros"
+    },
+    recurrenciaId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    fechaProgramada: {
+        type: DataTypes.DATEONLY,
+        allowNull: true
     }
+}, {
+    indexes: [
+        {
+            unique: true,
+            fields: ['recurrenciaId', 'fechaProgramada']
+        }
+    ]
 });
 
 module.exports = Gasto;
